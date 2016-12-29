@@ -446,6 +446,9 @@ class errorlog:
         self.ferr = open(path,"a")
         self.ferr.write(surround_text(str(datetime.datetime.now())) + "\n")
         self.ferr.write("# List of talks not properly downloaded last run:\n")
+        self.ferr.write("#    (use this file as listfile via\n")
+        self.ferr.write("#     --listfile \"" + path + "\"\n")
+        self.ferr.write("#    to rerun the download process with only the failed videos.)\n")
 
     def log(self,text):
         self.ferr.write(text + "\n")
