@@ -464,7 +464,8 @@ class idlist_reader:
 
             with open(path) as f:
                 try:
-                    self.idlist = [ int(line.strip()) for line in f.readlines() if not line.startswith("#") ]
+                    self.idlist = [ line.split('#')[0].strip() for line in f.readlines() if not line.startswith("#") ]
+                    self.idlist = [ int(val) for val in self.idlist if len(val) > 0 ]
                 except ValueError as e:
                     raise ValueError("Invalid idlist file \""+path+"\": " + str(e))
 
