@@ -168,12 +168,26 @@ class UnknownTalkIdError(Exception):
     def __init__(self,message):
         super(UnknownTalkIdError, self).__init__(message)
 
+class InvalidLanguagesError(Exception):
+    """
+    Thrown if a list of language ids is unknown or invalid
+    """
+    def __init__(self,message):
+        super(InvalidLanguagesError,self).__init__(message)
+
 class InvalidFahrplanData(Exception):
     """
     Thrown if the downloaded Fahrplan file is not valid
     """
     def __init__(self,message):
         super(InvalidFahrplanData, self).__init__(message)
+
+class InvalidMediaPage(Exception):
+    """
+    Thrown if the media page is off an unknown format
+    """
+    def __init__(self,message):
+        super(InvalidMediaPage, self).__init__(message)
 
 def get_format_list(media_prefix):
     """
@@ -221,16 +235,97 @@ class media_url_builder:
                 #is a valid media link since it contains a .
                 self.cached_list.append(hreftext)
 
-    def get_url(self,talkid):
+    def get_language_url_map(self,talkid):
+        """ Get a dash-separated dict mapping from languages to file names.
+            The key is a dash-separated list of languages. The value
+            is the full url to the file.
+
+            Often the same talk can be obtain with only a language-speciffic
+            audio track or with all avaiblable audo tracks. E.g. if both
+            German and German and English are available the function would
+            return the dict {"deu" : "url" , "deu-eng": "url"}.
+            Note that the keys are sorted alphabetically.
+
+            raises a UnknownTalkIdError if the file was not found on the server
+        """
+
+        # We assume that links have the format:
+        # event-id-lang1-lang2-...-Title_format.extension
+        # where lang1, lang2, ... language codes are each exactly 3 letters long.
+        # The first char of the title is upper case.
+        langmap=dict()
+        for link in self.cached_list:
+            start = link.find("-"+str(talkid)+"-")
+            if (start <= 0):
+                continue   # Not the correct talkid
+
+            start+=len("-"+str(talkid)+"-")  # skip the talkid part
+
+            # find the location of the format description:
+            endd=link.rfind(self.video_format)
+
+            # and skip the stuff after the last dash:
+            end=link.rfind("-",0,endd)
+            if start==end:
+                raise InvalidMediaPage("Could not extract available languages for talkid "
+                                       + str(talkid) +".")
+
+            # Sanity check: We expect the title to follow the languages
+            # I.e. the next char after end should be upper case.
+            if not link[end+1].isupper():
+                raise InvalidMediaPage("Invalid link format for talkid "
+                                       + str(talkid) +": The title does not seem to follow "
+                                       + "the languages in the file name. Link string: \"" + link + "\"")
+
+
+            # Find out which languages are available within
+            # this very file
+            splitted = link[start:end].split("-")
+            splitted.sort()
+            for lang in splitted:
+                if len(lang) != 3:
+                    raise InvalidMediaPage("Language with more than 3 letters encountered for talkid "
+                                           + str(talkid) + ": \"" + lang + "\"."
+                                           +"We expect that the languages follow the talkid in the "
+                                           + "file names on the media parge. Is this really the case?")
+
+            langmap[ "-".join(splitted) ] = self.media_prefix + "/" + self.video_format + "/"  + link
+
+        if len(langmap) == 0:
+            raise UnknownTalkIdError(talkid)
+
+        return langmap
+
+    def get_languages():
+        # TODO implement
+        return list()
+
+    def get_url(self,talkid,lang="ALL"):
         """
         Get the media url from the talkid
 
-        raises a UnknownTalkIdError if the file was not found on the server
+        lang:  A list of 3 letter language codes which should be contained as the audio
+               languages of the file.
+               Examples are "[deu]" or "[deu,eng]". For a list of available languages
+               for this file, see the returned values of the function list_languages()
+
+               The option also understands the special values "ALL", which returns the
+               url of the file with the most audio tracks and "ORIG"
+
+        If the talkid was not found on the server an UnknownTalkIdError is raised.
+        If the list of languages is invalid, an InvalidLanguagesError is raised.
         """
-        for link in self.cached_list:
-            if (link.find("-"+str(talkid)+"-") > 0):
-                return self.media_prefix+"/" + self.video_format + "/"  + link
-        raise UnknownTalkIdError(talkid)
+
+        langmap = self.get_language_url_map(talkid)
+        if lang == "ALL":
+            longestkey = ""
+            for key in langmap.keys():
+                if len(key) > len(longestkey):
+                    longestkey=key
+            return langmap[longestkey]
+        else:
+            # TODO implement
+            raise InvalidLanguagesError("Not yet implemented")
 
 class fahrplan_data:
     """
@@ -324,6 +419,8 @@ class lecture_downloader:
         self.media_url_builders = media_url_builders
 
     def info_text(self,talkid):
+        # TODO Use markdown or offer to use markdown here
+        #      => Make a pdf out of it?
         try:
             # the fahrplan lecture object:
             lecture = self.fahrplan_data.lectures[talkid]
@@ -384,8 +481,8 @@ class lecture_downloader:
             os.mkdir("./" + folder + "/")
 
         # write info page:
-        with open(folder+"/info_"+str(talkid)+".txt","w", encoding="utf-8") as f:
-            f.write( self.info_text(talkid))
+        with open(folder+"/info_"+str(talkid)+".txt","wb") as f:
+            f.write( self.info_text(talkid).encode("utf-8"))
 
         had_errors = False
 
