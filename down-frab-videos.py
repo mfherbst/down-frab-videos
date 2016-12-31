@@ -210,7 +210,7 @@ class media_url_builder:
             req = requests.get(media_prefix + "/" + video_format)
         except IOError as e:
             raise IOError(errorstring + ": " + str(e))
-                
+
         if (not req.ok):
             raise IOError(errorstring + ".")
 
@@ -252,10 +252,14 @@ class fahrplan_data:
                     req = requests.get(fahrplan_json)
             except IOError as e:
                 raise IOError(errorstring + ": " + str(e))
-                
+
             if (not req.ok):
                 raise IOError(errorstring + ".")
 
+            # Note: text automatically takes the resulting bytes,
+            # makes a guess and spits out an encoded string
+
+            # Request body as a unicode string
             return req.text
 
     def __init__(self,fahrplan_page):
@@ -380,7 +384,7 @@ class lecture_downloader:
             os.mkdir("./" + folder + "/")
 
         # write info page:
-        with open(folder+"/info_"+str(talkid)+".txt","w") as f:
+        with open(folder+"/info_"+str(talkid)+".txt","w", encoding="utf-8") as f:
             f.write( self.info_text(talkid))
 
         had_errors = False
