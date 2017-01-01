@@ -259,46 +259,64 @@ class media_url_builder:
             if (start <= 0):
                 continue   # Not the correct talkid
 
-            start+=len("-"+str(talkid)+"-")  # skip the talkid part
+            # Skip the talkid part
+            start+=len("-"+str(talkid)+"-")
 
-            # find the location of the format description:
-            endd=link.rfind(self.video_format)
+            # now go through the link splitted at the "-" characters:
+            splitted=list()
+            for part in link[start:].split("-"):
+                if part[0].isupper():
+                    # We found an upper case character,
+                    # i.e. we found the title.
+                    break
 
-            # and skip the stuff after the last dash:
-            end=link.rfind("-",0,endd)
-            if start==end:
-                raise InvalidMediaPage("Could not extract available languages for talkid "
-                                       + str(talkid) +".")
-
-            # Sanity check: We expect the title to follow the languages
-            # I.e. the next char after end should be upper case.
-            if not link[end+1].isupper():
-                raise InvalidMediaPage("Invalid link format for talkid "
-                                       + str(talkid) +": The title does not seem to follow "
-                                       + "the languages in the file name. Link string: \"" + link + "\"")
-
-
-            # Find out which languages are available within
-            # this very file
-            splitted = link[start:end].split("-")
-            splitted.sort()
-            for lang in splitted:
-                if len(lang) != 3:
+                if not len(part) == 3:
                     raise InvalidMediaPage("Language with more than 3 letters encountered for talkid "
-                                           + str(talkid) + ": \"" + lang + "\"."
+                                           + str(talkid) + ": \"" + lang + "\" in link \"" + link + "\". "
                                            +"We expect that the languages follow the talkid in the "
-                                           + "file names on the media parge. Is this really the case?")
+                                           + "file names on the media page. Is this really the case?")
 
-            langmap[ "-".join(splitted) ] = self.media_prefix + "/" + self.video_format + "/"  + link
+                # Append:
+                splitted.append(part)
+
+            # The languages are not sorted alphabetically by default, so we need:
+            splitted.sort()
+
+            if len(splitted) == 0:
+                raise InvalidMediaPage("Did not find a single language for talkid " + str(talkid)
+                        + " in the link \"" + link + "\"")
+
+            # Join again to give the key in the langmap:
+            key = "-".join(splitted)
+
+            # If it already exists, something is funny
+            if key in langmap:
+                raise InvalidMediaPage("Found the language key \"" + key + "\" twice in the language map. "
+                        + "It was generated from both the links \"" + link + "\" as well as \""
+                        + langmap[key] + "\".")
+
+            langmap[ key ] = self.media_prefix + "/" + self.video_format + "/"  + link
 
         if len(langmap) == 0:
             raise UnknownTalkIdError(talkid)
 
         return langmap
 
-    def get_languages():
-        # TODO implement
-        return list()
+    def get_languages(self,talkid):
+        """
+        Get a set of 3 character language ids, for which audio tracks exist for this talkid.
+        Not neccessarily a file with exactly this audio track or all combinations of audio
+        tracks might exist.
+
+        For example. If a file with deu, eng and rus exists as well as a file with spa and deu
+        the result will be the set { deu, eng, spa, rus }.
+        """
+        keys = self.get_language_url_map(talkid).keys()
+
+        res = set()
+        for s in [ x.split("-") for x in keys ]:
+            res.update(s)
+        return res
 
     def get_url(self,talkid,lang="ALL"):
         """
@@ -315,10 +333,9 @@ class media_url_builder:
         If the talkid was not found on the server an UnknownTalkIdError is raised.
         If the list of languages is invalid, an InvalidLanguagesError is raised.
         """
-
         langmap = self.get_language_url_map(talkid)
         if lang == "ALL":
-            longestkey = ""
+            longestkey = langmap.keys()[0]
             for key in langmap.keys():
                 if len(key) > len(longestkey):
                     longestkey=key
