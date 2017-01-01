@@ -335,7 +335,7 @@ class media_url_builder:
         """
         langmap = self.get_language_url_map(talkid)
         if lang == "ALL":
-            longestkey = langmap.keys()[0]
+            longestkey = ""
             for key in langmap.keys():
                 if len(key) > len(longestkey):
                     longestkey=key
@@ -347,7 +347,7 @@ class media_url_builder:
 class fahrplan_data:
     """
     Get json data from Fahrplan and extract relevant part.
-    
+
     fahrplan_string can be an url or a file on the local disk 
     """
 
