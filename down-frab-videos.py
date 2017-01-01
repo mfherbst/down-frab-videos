@@ -182,12 +182,12 @@ class InvalidFahrplanData(Exception):
     def __init__(self,message):
         super(InvalidFahrplanData, self).__init__(message)
 
-class InvalidMediaPage(Exception):
+class InvalidMediaPageError(Exception):
     """
     Thrown if the media page is off an unknown format
     """
     def __init__(self,message):
-        super(InvalidMediaPage, self).__init__(message)
+        super(InvalidMediaPageError, self).__init__(message)
 
 def get_format_list(media_prefix):
     """
@@ -247,6 +247,7 @@ class media_url_builder:
             Note that the keys are sorted alphabetically.
 
             raises a UnknownTalkIdError if the file was not found on the server
+            If the media page cannot be parsed an InvalidMediaPageError is raised.
         """
 
         # We assume that links have the format:
@@ -271,7 +272,7 @@ class media_url_builder:
                     break
 
                 if not len(part) == 3:
-                    raise InvalidMediaPage("Language with more than 3 letters encountered for talkid "
+                    raise InvalidMediaPageError("Language with more than 3 letters encountered for talkid "
                                            + str(talkid) + ": \"" + lang + "\" in link \"" + link + "\". "
                                            +"We expect that the languages follow the talkid in the "
                                            + "file names on the media page. Is this really the case?")
@@ -283,7 +284,7 @@ class media_url_builder:
             splitted.sort()
 
             if len(splitted) == 0:
-                raise InvalidMediaPage("Did not find a single language for talkid " + str(talkid)
+                raise InvalidMediaPageError("Did not find a single language for talkid " + str(talkid)
                         + " in the link \"" + link + "\"")
 
             # Join again to give the key in the langmap:
@@ -291,7 +292,7 @@ class media_url_builder:
 
             # If it already exists, something is funny
             if key in langmap:
-                raise InvalidMediaPage("Found the language key \"" + key + "\" twice in the language map. "
+                raise InvalidMediaPageError("Found the language key \"" + key + "\" twice in the language map. "
                         + "It was generated from both the links \"" + link + "\" as well as \""
                         + langmap[key] + "\".")
 
@@ -325,13 +326,14 @@ class media_url_builder:
         lang:  A list of 3 letter language codes which should be contained as the audio
                languages of the file.
                Examples are "[deu]" or "[deu,eng]". For a list of available languages
-               for this file, see the returned values of the function list_languages()
+               for this file, see the returned values of the function get_languages()
 
                The option also understands the special values "ALL", which returns the
-               url of the file with the most audio tracks and "ORIG"
+               url of the file with the most audio tracks.
 
         If the talkid was not found on the server an UnknownTalkIdError is raised.
         If the list of languages is invalid, an InvalidLanguagesError is raised.
+        If the media page cannot be parsed an InvalidMediaPageError is raised.
         """
         langmap = self.get_language_url_map(talkid)
         if lang == "ALL":
