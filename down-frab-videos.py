@@ -266,16 +266,25 @@ class media_url_builder:
             # now go through the link splitted at the "-" characters:
             splitted=list()
             for part in link[start:].split("-"):
-                if part[0].isupper():
-                    # We found an upper case character,
+                if part[0].isupper() or part[0].isdigit():
+                    # We found an upper case or a number
                     # i.e. we found the title.
                     break
 
+                errormsg=("encountered in link \"" + link + "\": \"" + part 
+                    + "\". We expect that the languages follow the talkid and "
+                    + "that the title follows the languages. The title "
+                    + "should be indicated by an upper case or a number."
+                    + "Please check that this is the case.")
+
+                if not part[0].islower():
+                    raise InvalidMediaPageError("Language code which does not start with "
+                                           + "a lower case character " + errormsg)
+
+
                 if not len(part) == 3:
-                    raise InvalidMediaPageError("Language with more than 3 letters encountered for talkid "
-                                           + str(talkid) + ": \"" + lang + "\" in link \"" + link + "\". "
-                                           +"We expect that the languages follow the talkid in the "
-                                           + "file names on the media page. Is this really the case?")
+                    raise InvalidMediaPageError("Language with more than 3 letters " 
+                                           + errormsg)
 
                 # Append:
                 splitted.append(part)
