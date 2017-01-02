@@ -123,7 +123,7 @@ class config:
         self.__most_recent_event = self.events[mname]
 
         # make sure that the key and the name field are identical
-        self.__most_recent_event["name"] = mname  
+        self.__most_recent_event["name"] = mname
 
     @property
     def settings(self):
@@ -421,20 +421,119 @@ class fahrplan_data:
         """
         return self.__location
 
-def wget(url,folder=".",out=None):
+def find_os_executable(executable):
     """
-    Use wget to download an url into a specific folder.
-
-    if out is not none, this output filename is used.
+    Return the full path of an executable
+    or None if it could not be found
     """
-    # TODO do this internally with requests or so.
+    if os.path.isfile(executable):
+        return executable
 
-    args = [ "wget", "--continue", "--show-progress" ]
-    if out is not None:
-        args.append("--output-document=" + str(out))
-    args.append(url)
+    psplit = os.environ['PATH'].split(os.pathsep)
+    for p in psplit:
+        exe_path = os.path.join(p, executable)
+        if os.path.isfile(exe_path):
+            return exe_path
+    return None
 
-    return subprocess.call( args, cwd=folder )
+""" Class to manage different methods to download files from the net."""
+class download_manager:
+    def __init__(self):
+        self.wget_path = find_os_executable("wget")
+        self.curl_path = find_os_executable("curl")
+
+        # self.automethod decides which method is chosen if
+        # method="auto" is supplied to download
+        self.automethod = "requests"
+        if self.wget_path is not None:
+            self.automethod = "wget"
+        elif self.curl_path is not None:
+            self.automethod = "curl"
+
+    def _download_wget(self,url,folder=".",out=None):
+        args = [ self.wget_path, "--continue", "--show-progress" ]
+        if out is not None:
+            args.append("--output-document=" + str(out))
+        args.append(url)
+        return subprocess.call( args, cwd=folder )
+
+    def _download_curl(self,url,folder=".",out=None):
+        if out is None:
+            out = os.path.basename(url)
+        args = [ self.curl_path , "--continue-at", "-",
+                 "--location", "--output", out, url ]
+        return subprocess.call( args, cwd=folder )
+
+    def _download_requests(self,url,folder=".",out=None):
+        if out is None:
+            out = os.path.basename(url)
+        file_name = os.path.join(folder,out)
+
+        with open(file_name, "wb") as f:
+            print("Downloading file: ", file_name)
+            print("from:             ", url)
+            response = requests.get(url, stream=True)
+            total_data_size = response.headers.get('content-length')
+
+            if total_data_size is None:
+                f.write(response.content)
+            else:
+                total_data_size = int(total_data_size)  # Convert from string to int
+
+                pbar_width=50      # Progress bar width
+                sum_data_size = 0  # Size of data downloaded so far
+                for data in response.iter_content(chunk_size=4096):
+                    sum_data_size += len(data)
+                    f.write(data)
+
+                    n_dash = int(pbar_width * sum_data_size / total_data_size)
+                    sys.stdout.write("\r   ["+"="*n_dash + " " * (pbar_width-n_dash)+"]")
+                    sys.stdout.flush()
+
+    def is_method_available(self, method):
+        """Check whether the provided download method is available."""
+        if method == "requests":
+            return True
+        if method == "wget":
+            return self.wget_path is not None
+        if method == "curl":
+            return self.curl_path is not None
+        else:
+            raise ValueError("Unknown method: " + method)
+
+    def download(self,url,folder=".",out=None,method=None):
+        """Download an url into a folder. 
+
+           method:    The method/program to use for download
+                      - wget       use wget
+                      - curl       use curl
+                      - requests   use python requests
+                      - None:   choose automatically
+           out:   The name of the output file. If not given
+                  it is autodetermined
+
+          If a download method is not available a ValueError
+          is raised.
+
+          Returns the return code of the program executed.
+        """
+        # TODO better not expose the return code and go via
+        #      exceptions instead
+
+        if method is None:
+            return self.download(url,folder=folder, out=out,method=self.automethod)
+
+        if not self.is_method_available(method):
+            raise ValueError("Method not available: " + method)
+
+        if method == "wget":
+            return self._download_wget(url,folder=folder,out=out)
+        elif method == "curl":
+            return self._download_curl(url,folder=folder,out=out)
+        elif method == "requests":
+            return self._download_requests(url,folder=folder,out=out)
+        else:
+            raise SystemExit("We should never get to this branch. This is a bug.")
 
 class lecture_downloader:
     def __init__(self,fahrplan_data, media_url_builders):
@@ -502,7 +601,8 @@ class lecture_downloader:
             # folder into which to download everything:
             folder = lecture['slug']
         except KeyError as e:
-            raise InvalidFahrplanData("Fahrplan file \"" + self.fahrplan_data.location + "\" is not in the expected format: Key \"" + str(e) + "\" is missing")
+            raise InvalidFahrplanData("Fahrplan file \"" + self.fahrplan_data.location
+                                      + "\" is not in the expected format: Key \"" + str(e) + "\" is missing")
 
         # make dir
         if not os.path.isdir("./" + folder + "/"):
@@ -514,13 +614,16 @@ class lecture_downloader:
 
         had_errors = False
 
+        # Download manager object:
+        down_manag = download_manager()
+
         # download all media files:
         for builder in self.media_url_builders:
             try:
                 url = builder.get_url(talkid)
 
                 # TODO this is not ideal, do this with exceptions
-                ret = wget(url,folder=folder)
+                ret = down_manag.download(url,folder=folder)
                 if ret != 0:
                     print("Could not download media file \"" + url + "\".")
                     had_errors = True
@@ -542,7 +645,7 @@ class lecture_downloader:
             # download
             outfile = url[url.rfind("/")+1:]          # basename of the url
             outfile = outfile[:outfile.rfind("?")]    # ignore the tailling ?..... stuff
-            ret = wget(url, folder=folder, out=outfile)
+            ret = down_manag.download(url,folder=folder,out=outfile)
             if ret != 0:
                 print("Could not download attachment \"" + att + "\" to file \"" + outfile 
                       + "\" in folder \""+ folder + "\".")
