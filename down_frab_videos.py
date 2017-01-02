@@ -742,7 +742,7 @@ def add_args_to_parser(parser):
     Add all required arguments to the parser object
     """
     # configuration:
-    parser.add_argument("--config", metavar="config_file", type=str, default="~/.mfhBin/down_chaos_videos.yaml",
+    parser.add_argument("--config", metavar="config_file", type=str, default="~/.mfhBin/down_frab_videos.yaml",
                         help="Path to the config file used to determine the appropriate urls for the chaos events, ...")
     parser.add_argument("--event", default=None, type=str, metavar="event",
                         help="Select a specific chaos event, by default the most recent, known event is selected.")
