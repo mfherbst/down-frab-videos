@@ -792,5 +792,14 @@ if __name__ == "__main__":
             print("TalkId erroneous or unknown: " + str(e))
             errlog.log(str(talkid))
         except InvalidFahrplanData as e:
-            print("Invalid Fahrplan data for TalkId " + str(talkid) + ": " + str(e))
+            print("Invalid Fahrplan data for TalkId " + str(talkid)
+                  + ": " + str(e))
+            errlog.log(str(talkid))
+        except InvalidLanguagesError as e:
+            print("Found invalid language codes for TalkId "
+                  + str(talkid) + ": " + str(e))
+            errlog.log(str(talkid))
+        except InvalidMediaPageError as e:
+            print("Found an invalid entry on the media webpage for TalkId "
+                  + str(talkid) + ": " + str(e))
             errlog.log(str(talkid))
