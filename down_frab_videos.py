@@ -303,13 +303,13 @@ class media_url_builder:
                     #      Clean this up later ...
                     if not raise_on_error:
                         errors=True
-                        print("     ... skipping \"" + hreftext + "\" ("+e.short_message+")")
+                        print("      ... skipping \"" + hreftext + "\" ("+e.short_message+")")
                     else:
                         raise
 
         if errors:
-            print("\n    The skipped links could not be parsed and will not be available")
-            print("    for download. Either patch this script or download them manually.\n")
+            print("\n      Note: The skipped files could not be parsed and will not be available")
+            print("            for download. Either patch this script or download them manually.\n")
 
         del soup
 
@@ -1040,18 +1040,20 @@ if __name__ == "__main__":
     #
     print(surround_text("Gathering lecture data for " + selected_event["name"]))
     try:
-        print("   - Info about video files from \"" + domain_from_url(selected_event["media_prefix"]) + "\"")
-        builders = [ media_url_builder(selected_event["media_prefix"], format,raise_on_error=args.strict)
-                     for format in selected_formats ]
+        print(" - Info about video files from \"" + domain_from_url(selected_event["media_prefix"]) + "\"")
+        builders = []
+        for form in selected_formats:
+            print("    -", form)
+            builders.append(media_url_builder(selected_event["media_prefix"], form, raise_on_error=args.strict))
     except IOError as e:
         raise SystemExit("Could not download list of media files: " + str(e))
 
     try:
-        print("   - Fahrplan from \"" + domain_from_url(selected_event["fahrplan"]) + "\".")
+        print(" - Fahrplan from \"" + domain_from_url(selected_event["fahrplan"]) + "\".")
         fahrplan = fahrplan_data(selected_event["fahrplan"])
     except IOError as e:
         raise SystemExit("Could not download Fahrplan: " + str(e))
-    print("   - Finished: Got \"" + fahrplan.meta['conference'] + "\", version \"" + fahrplan.meta['version'] + "\"")
+    print(" - Finished: Got \"" + fahrplan.meta['conference'] + "\", version \"" + fahrplan.meta['version'] + "\"")
 
     # bundle fahrplan and builders into the downloader
     downloader = lecture_downloader(fahrplan,builders)
