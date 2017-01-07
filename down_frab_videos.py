@@ -27,6 +27,12 @@ import pycountry
 # Output text formatting
 import textwrap
 
+# Info about this script:
+FILE=os.path.basename(__file__)
+VERSION="0.2.0"
+SOURCE="https://github.com/mfherbst/down-frab-videos"
+USER_AGENT=FILE + " " + VERSION + " (see " + SOURCE + ")"
+
 class config:
     __default_config = {
         "settings": {
@@ -197,7 +203,12 @@ def get_format_list(media_prefix):
     errorstring = "Could not download list of media formats from \"" + media_prefix + "/" + "\""
     format_list=[]
     try:
-        req = requests.get(media_prefix + "/")
+        req_headers = {
+            'User-Agent': USER_AGENT,
+            'From': SOURCE,
+        }
+
+        req = requests.get(media_prefix + "/", headers=req_headers)
     except IOError as e:
         raise IOError(errorstring + ": " + str(e))
 
@@ -242,7 +253,12 @@ class media_url_builder:
 
         errorstring = "Could not download list of media files from \"" + media_prefix + "/" + video_format + "\""
         try:
-            req = requests.get(media_prefix + "/" + video_format)
+            req_headers = {
+                'User-Agent': USER_AGENT,
+                'From': SOURCE,
+            }
+
+            req = requests.get(media_prefix + "/" + video_format, headers=req_headers)
         except IOError as e:
             raise IOError(errorstring + ": " + str(e))
 
@@ -481,7 +497,12 @@ class fahrplan_data:
         else:
             errorstring = "Could not get the Fahrplan from \"" + fahrplan_json + "\""
             try:
-                    req = requests.get(fahrplan_json)
+                req_headers = {
+                    'User-Agent': USER_AGENT,
+                    'From': SOURCE,
+                }
+
+                req = requests.get(fahrplan_json,headers=req_headers)
             except IOError as e:
                 raise IOError(errorstring + ": " + str(e))
 
@@ -560,7 +581,8 @@ class download_manager:
             self.automethod = "curl"
 
     def _download_wget(self,url,folder=".",out=None):
-        args = [ self.wget_path, "--continue", "--show-progress" ]
+        args = [ self.wget_path, "--continue", "--show-progress",
+                "--user-agent=\"" + USER_AGENT + "\"" ]
         if out is not None:
             args.append("--output-document=" + str(out))
         args.append(url)
@@ -570,7 +592,9 @@ class download_manager:
         if out is None:
             out = os.path.basename(url)
         args = [ self.curl_path , "--continue-at", "-",
-                 "--location", "--output", out, url ]
+                "--location", "--user-agent",
+                "\"" + USER_AGENT + "\"",
+                "--output", out, url ]
         return subprocess.call( args, cwd=folder )
 
     def _download_requests(self,url,folder=".",out=None):
@@ -578,10 +602,15 @@ class download_manager:
             out = os.path.basename(url)
         file_name = os.path.join(folder,out)
 
+        req_headers = {
+            'User-Agent': USER_AGENT,
+            'From': SOURCE,
+        }
+
         with open(file_name, "wb") as f:
             print("Downloading file: ", file_name)
             print("from:             ", url)
-            response = requests.get(url, stream=True)
+            response = requests.get(url, stream=True, headers=req_headers)
             total_data_size = response.headers.get('content-length')
 
             if total_data_size is None:
@@ -873,6 +902,7 @@ def add_args_to_parser(parser):
     parser.add_argument("--list-events", action='store_true', default=False, help="List the configured chaos events and exit.")
     parser.add_argument("--dump-config", action='store_true', 
                         help="Dump the default config to the file given via --config or the default location and exit.")
+    parser.add_argument("--version", action='store_true', default=False, help="Print version information and exit.")
 
 def parse_args_from_parser(parser):
     """
@@ -881,19 +911,20 @@ def parse_args_from_parser(parser):
     """
     args = parser.parse_args()
 
-    if not (args.dump_config  or args.list_events or args.list_formats):
+    if not (args.dump_config  or args.list_events or args.list_formats or args.version):
         args.download_mode = True
 
-        if args.listfile is None and len(args.list) == 0:
-            raise SystemExit("You need to supply one of --list, --listfile, --list-formats, --list-events, --dump-config")
+        if args.listfile is None and len(args.ids) == 0:
+            raise SystemExit("You need to supply one of --ids, --listfile, --list-formats, --list-events, --dump-config")
 
         if not args.listfile is None and not os.path.exists(args.listfile):
             raise SystemExit("The list file \"" + args.listfile + "\" does not exist.")
 
     else:
         args.download_mode = False
-        if args.listfile is not None:
-            print("--listfile is ignored if one of --list-formats, --list-events, --dump-config is specified,"
+        if args.listfile is not None or len(args.ids) > 0:
+            print("--listfile and --ids are ignored if one of --list-formats, --list-events, "
+                  "--dump-config, --version is specified,"
                   "since no download will be done it these cases.")
 
     return args
@@ -905,6 +936,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Download videos from the Fahrplan and media system used for chaos events.")
     add_args_to_parser(parser)
     args = parse_args_from_parser(parser)
+
+    #
+    # version
+    #
+    if args.version:
+        ret  = FILE  + " " + VERSION + "\n\n"
+
+        ret += "Copyright © 2017 Michael F. Herbst.\n"
+        ret += "License GPLv3+: GNU GPL version 3 or later\n"
+        ret += "<http://www.gnu.org/licenses/gpl.html>.\n\n"
+
+        ret += "Please report bugs and suggest enhancements under\n"
+        ret += "<" + SOURCE + ">.\n"
+        print(ret[:-1])
+        sys.exit(0)
 
     #
     # config
