@@ -193,8 +193,10 @@ class InvalidMediaPageError(Exception):
     """
     Thrown if the media page is off an unknown format
     """
-    def __init__(self,message):
-        super(InvalidMediaPageError, self).__init__(message)
+    def __init__(self,short_message,long_message):
+        super(InvalidMediaPageError, self).__init__(long_message)
+        self.short_message = short_message
+        self.long_message = long_message
 
 def get_format_list(media_prefix):
     """
@@ -244,10 +246,13 @@ class media_url_builder:
         The precise language code differs for various chaos events (sigh)
         and is auto-determined.
 
-        If the media page is invalid an InvalidMediaPageError is raised.
+        raise_on_error    If the script detects that the media page is erroneous or
+                          inconsistent, should it skip the entries which cannot be
+                          parsed (False, default) or raise an InvalidMediaPageError
+                          (True)
     """
 
-    def __init__(self,media_prefix, video_format):
+    def __init__(self,media_prefix, video_format, raise_on_error=False):
         self.media_prefix = media_prefix
         self.video_format = video_format
 
@@ -285,12 +290,27 @@ class media_url_builder:
         # }
         self.cached = dict()
 
+        errors=False
         soup = BeautifulSoup(req.content,"lxml")
         for link in soup.find_all('a'):
             hreftext = link.get('href')
             if hreftext.rfind(".") > 0 and len(hreftext) > 5:
                 # is a valid media link since it contains a . and a -
-                self.__parse_link(hreftext,self.cached)
+                try:
+                    self.__parse_link(hreftext,self.cached)
+                except InvalidMediaPageError as e:
+                    # TODO It feels a little wrong to have print statements in this class
+                    #      Clean this up later ...
+                    if not raise_on_error:
+                        errors=True
+                        print("     ... skipping \"" + hreftext + "\" ("+e.short_message+")")
+                    else:
+                        raise
+
+        if errors:
+            print("\n    The skipped links could not be parsed and will not be available")
+            print("    for download. Either patch this script or download them manually.\n")
+
         del soup
 
     def __list_to_langmap_key(li):
@@ -352,7 +372,8 @@ class media_url_builder:
             lang_outkey = lang_inkey
             lang_len = 3
         else:
-            raise InvalidMediaPageError("Could not determine language code from "
+            raise InvalidMediaPageError("invalid language code",
+                                        "Could not determine language code from "
                                         + "language string \"" + splitted[2] + "\""
                                         + " in link \"" + link + "\".")
 
@@ -369,7 +390,8 @@ class media_url_builder:
                 + "Please check that this is the case.")
 
             if not part[0].islower():
-                raise InvalidMediaPageError("Language code which does not start with "
+                raise InvalidMediaPageError("invalid language code",
+                                        "Language code which does not start with "
                                        + "a lower case character " + errormsg)
 
             try:
@@ -382,12 +404,14 @@ class media_url_builder:
                     # So we will silently ignore it and break out
                     break
                 else:
-                    raise InvalidMediaPageError("Invalid " + lang_standard + " language code \""
+                    raise InvalidMediaPageError("invalid language code",
+                                                "Invalid " + lang_standard + " language code \""
                                                 + part + "\" " + errormsg)
 
         if len(languages) == 0:
-            raise InvalidMediaPageError("Did not find a single language for link \"" + link
-                    + "\"")
+            raise InvalidMediaPageError("no languages found",
+                                        "Did not find a single language for link \"" + link
+                                        + "\"")
 
         return languages
 
@@ -399,7 +423,7 @@ class media_url_builder:
         talkdict = {}
 
         if len(splitted) < 4:
-            raise InvalidMediaPageError("Could not split link: \"" + link + "\"")
+            raise InvalidMediaPageError("failed to parse link","Could not split link: \"" + link + "\"")
 
         # event-id-lang1-lang2-...-Title_format.extension
         try:
@@ -407,11 +431,11 @@ class media_url_builder:
             talkdict = outdict.setdefault(talkid,dict())
             talkdict["talkid"] = talkid
         except ValueError:
-            print("     ... omitting \"" + link + "\" (invalid talkid)")
-            #raise InvalidMediaPageError("Could not determine talkid in link: \"" + link + "\"")
+            raise InvalidMediaPageError("invalid talkid", "Could not determine talkid in link: \"" + link + "\"")
 
         if splitted[0] != talkdict.setdefault("event", splitted[0]):
-            raise InvalidMediaPageError("The event string of multiple files of the "
+            raise InvalidMediaPageError("inconsistent information",
+                                        "The event string of multiple files of the "
                                         + "talkid "+str(talkid)
                                         + "do not agree. Once we had \""
                                         + splitted[0] + "\" and once we had \""
@@ -427,7 +451,8 @@ class media_url_builder:
         langmap = talkdict.setdefault("langmap", dict())
 
         if key in langmap:
-            raise InvalidMediaPageError("Found the language key \"" + key + "\" twice in the language map. "
+            raise InvalidMediaPageError("duplicated language set",
+                    "Found the language key \"" + key + "\" twice in the language map. "
                     + "It was generated from both the links \"" + link + "\" as well as \""
                     + langmap[key]["url"] + "\".")
 
@@ -904,6 +929,9 @@ def add_args_to_parser(parser):
                         help="Dump the default config to the file given via --config or the default location and exit.")
     parser.add_argument("--version", action='store_true', default=False, help="Print version information and exit.")
 
+    # behaviour:
+    parser.add_argument("--strict", action='store_true', default=False, help="Be more strict about the parsed data, e.g. abort on any error encountered.")
+
 def parse_args_from_parser(parser):
     """
     Parse all args from the parser object required for this module
@@ -1013,7 +1041,8 @@ if __name__ == "__main__":
     print(surround_text("Gathering lecture data for " + selected_event["name"]))
     try:
         print("   - Info about video files from \"" + domain_from_url(selected_event["media_prefix"]) + "\"")
-        builders = [ media_url_builder(selected_event["media_prefix"], format) for format in selected_formats ]
+        builders = [ media_url_builder(selected_event["media_prefix"], format,raise_on_error=args.strict)
+                     for format in selected_formats ]
     except IOError as e:
         raise SystemExit("Could not download list of media files: " + str(e))
 
@@ -1067,9 +1096,5 @@ if __name__ == "__main__":
             errlog.log(str(talkid))
         except InvalidLanguagesError as e:
             print("Found invalid language codes for TalkId "
-                  + str(talkid) + ": " + str(e))
-            errlog.log(str(talkid))
-        except InvalidMediaPageError as e:
-            print("Found an invalid entry on the media webpage for TalkId "
                   + str(talkid) + ": " + str(e))
             errlog.log(str(talkid))
