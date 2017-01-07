@@ -19,11 +19,12 @@ import yaml
 import requests
 from bs4 import BeautifulSoup
 
-# date and time
+# date, time and language
 import datetime
 import time
+import pycountry
 
-# Formatting 
+# Output text formatting
 import textwrap
 
 class config:
@@ -206,16 +207,36 @@ def get_format_list(media_prefix):
     soup = BeautifulSoup(req.content,"lxml")
     for link in soup.find_all('a'):
         hreftext = link.get('href')
-        if (hreftext.rfind("/") > 0) and link.string != "Parent Directory":
+        if (hreftext.rfind("/") > 0) and hreftext[:-1] != "..":
             #is a valid media format since it contains a / and is not the parent
             format_list.append(hreftext[:-1])
     return format_list
 
+# TODO Rewrite this class. It has actually become some sort of parser for the
+#      media.ccc.de page. We could easily generalise it to contain a parsed version
+#      of the full page or all media files for the event or so ...
+#      and it should really go to a separate file.
 class media_url_builder:
-    """ Class downloading the list of media files of the given format"""
+    """Class parsing the list of media files of the given file format
+
+        We assume that all of the links have the form
+            event-id-lang1-lang2-...-Title_format.extension
+        where
+            event   String describing the event
+            id      TalkId
+            lang1, lang2 ...
+                    ISO 639-1 or ISO 639-3 language codes which describe the language
+                    of the audio tracks on this file
+            Title   Capitalised title of the talk
+            format  The file format
+            extension  The extension of the file format
+        The precise language code differs for various chaos events (sigh)
+        and is auto-determined.
+
+        If the media page is invalid an InvalidMediaPageError is raised.
+    """
 
     def __init__(self,media_prefix, video_format):
-        self.cached_list=[]
         self.media_prefix = media_prefix
         self.video_format = video_format
 
@@ -228,129 +249,217 @@ class media_url_builder:
         if (not req.ok):
             raise IOError(errorstring + ".")
 
+        # dictionary which contains a parsed version of the media page.
+        # roughly follows
+        # { talkid : {
+        #       "event":       "32c3"
+        #       # langs for which audio tracks exist in ISO 639-3 format
+        #       "languages":   [ "lang1", "lang2", "lang3" ],
+        #       "langmap":      {
+        #                        "deu-eng":  {
+        #                                     "url": "http:// .... ",
+        #                                     "languages": [ "deu", "eng" ]
+        #                                    },
+        #                        "eng":      {
+        #                                     "url": "http:// .... ",
+        #                                     "languages": [ "eng" ],
+        #                                    },
+        #                      }
+        #       }
+        # }
+        self.cached = dict()
+
         soup = BeautifulSoup(req.content,"lxml")
         for link in soup.find_all('a'):
             hreftext = link.get('href')
-            if (hreftext.rfind(".") > 0):
-                #is a valid media link since it contains a .
-                self.cached_list.append(hreftext)
+            if hreftext.rfind(".") > 0 and len(hreftext) > 5:
+                # is a valid media link since it contains a . and a -
+                self.__parse_link(hreftext,self.cached)
+        del soup
 
-    def get_language_url_map(self,talkid):
-        """ Get a dash-separated dict mapping from languages to file names.
-            The key is a dash-separated list of languages. The value
-            is the full url to the file.
-
-            Often the same talk can be obtain with only a language-speciffic
-            audio track or with all avaiblable audo tracks. E.g. if both
-            German and German and English are available the function would
-            return the dict {"deu" : "url" , "deu-eng": "url"}.
-            Note that the keys are sorted alphabetically.
-
-            raises a UnknownTalkIdError if the file was not found on the server
-            If the media page cannot be parsed an InvalidMediaPageError is raised.
+    def __list_to_langmap_key(li):
+        """Take a list and return the key needed for lookup
+           into the langmap dictionaries of the talks, which returns
+           the file which contains those languages.
         """
+        li.sort()
+        return "-".join(li)
 
-        # We assume that links have the format:
-        # event-id-lang1-lang2-...-Title_format.extension
-        # where lang1, lang2, ... language codes are each exactly 3 letters long.
-        # The first char of the title is upper case.
-        langmap=dict()
-        for link in self.cached_list:
-            start = link.find("-"+str(talkid)+"-")
-            if (start <= 0):
-                continue   # Not the correct talkid
+    def __determine_iso_639_3_key():
+        """ Determine the key needed for accessing ISO 639-3
+            language codes using pycountry.
+        """
+        # Different version of pycountry seem to use different keys.
+        # Try a couple (Note: all ISO639-2T codes are ISO639-3 codes
+        # as well)
+        for key3 in [ "iso639_3_code", "terminology", "iso639_2T_code" ]:
+            try:
+                langobject = pycountry.languages.get(**{key3: "deu"})
+                return key3
+            except KeyError as e:
+                 continue
+        return None
 
-            # Skip the talkid part
-            start+=len("-"+str(talkid)+"-")
+    def __determine_iso_639_1_key():
+        """ Determine the key needed for accessing ISO 639-3
+            language codes using pycountry.
+        """
+        # Different version of pycountry seem to use different keys.
+        # Try a couple (Note: all ISO639-2T codes are ISO639-3 codes
+        # as well)
+        for key2 in [ "iso639_1_code", "alpha_2", "alpha2" ]:
+            try:
+                langobject = pycountry.languages.get(**{key2: "de"})
+                return key2
+            except KeyError as e:
+                 continue
+        return None
 
-            # now go through the link splitted at the "-" characters:
-            splitted=list()
-            for part in link[start:].split("-"):
-                if part[0].isupper() or part[0].isdigit():
-                    # We found an upper case or a number
-                    # i.e. we found the title.
+    def __parse_languages(link, splitted):
+        """ Take a splitted link and return the parsed
+            language set.
+        """
+        languages = set()  # The parsed language list
+
+        # The parameters for parsing the language codes for
+        # this talk.
+        # Yes in some events the language code standard used
+        # changes from talk to talk ...
+        if len(splitted[2]) == 2:
+            lang_standard = "iso639_1"
+            lang_inkey = media_url_builder.__determine_iso_639_1_key()
+            lang_outkey = media_url_builder.__determine_iso_639_3_key()
+            lang_len = 2
+        elif len(splitted[2]) == 3:
+            lang_standard = "iso639_3"
+            lang_inkey = media_url_builder.__determine_iso_639_3_key()
+            lang_outkey = lang_inkey
+            lang_len = 3
+        else:
+            raise InvalidMediaPageError("Could not determine language code from "
+                                        + "language string \"" + splitted[2] + "\""
+                                        + " in link \"" + link + "\".")
+
+        for part in splitted[2:]:
+            if part[0].isupper() or part[0].isdigit():
+                # We found an upper case or a number
+                # i.e. we found the title.
+                break
+
+            errormsg=("encountered in link \"" + link + "\": \"" + part 
+                + "\". We expect that the languages follow the talkid and "
+                + "that the title follows the languages. The title "
+                + "should be indicated by an upper case or a number. "
+                + "Please check that this is the case.")
+
+            if not part[0].islower():
+                raise InvalidMediaPageError("Language code which does not start with "
+                                       + "a lower case character " + errormsg)
+
+            try:
+                langobject = pycountry.languages.get(**{lang_inkey: part})
+                languages.add(getattr(langobject, lang_outkey))
+            except KeyError as e:
+                if len(e.args[0]) > lang_len and len(languages) > 0:
+                    # Probably this is a title which is lower-cased
+                    # (Yes those actually do exist as well ... )
+                    # So we will silently ignore it and break out
                     break
+                else:
+                    raise InvalidMediaPageError("Invalid " + lang_standard + " language code \""
+                                                + part + "\" " + errormsg)
 
-                errormsg=("encountered in link \"" + link + "\": \"" + part 
-                    + "\". We expect that the languages follow the talkid and "
-                    + "that the title follows the languages. The title "
-                    + "should be indicated by an upper case or a number."
-                    + "Please check that this is the case.")
+        if len(languages) == 0:
+            raise InvalidMediaPageError("Did not find a single language for link \"" + link
+                    + "\"")
 
-                if not part[0].islower():
-                    raise InvalidMediaPageError("Language code which does not start with "
-                                           + "a lower case character " + errormsg)
+        return languages
 
+    def __parse_link(self, link, outdict):
+        """Parses a link and adds the appropriate entry to the
+           output dictionary outdict
+        """
+        splitted = link.split("-")
+        talkdict = {}
 
-                if not len(part) == 3:
-                    raise InvalidMediaPageError("Language with more than 3 letters " 
-                                           + errormsg)
+        if len(splitted) < 4:
+            raise InvalidMediaPageError("Could not split link: \"" + link + "\"")
 
-                # Append:
-                splitted.append(part)
+        # event-id-lang1-lang2-...-Title_format.extension
+        try:
+            talkid = int(splitted[1])
+            talkdict = outdict.setdefault(talkid,dict())
+            talkdict["talkid"] = talkid
+        except ValueError:
+            print("     ... omitting \"" + link + "\" (invalid talkid)")
+            #raise InvalidMediaPageError("Could not determine talkid in link: \"" + link + "\"")
 
-            # The languages are not sorted alphabetically by default, so we need:
-            splitted.sort()
+        if splitted[0] != talkdict.setdefault("event", splitted[0]):
+            raise InvalidMediaPageError("The event string of multiple files of the "
+                                        + "talkid "+str(talkid)
+                                        + "do not agree. Once we had \""
+                                        + splitted[0] + "\" and once we had \""
+                                        + talkdict["event"] + "\"")
 
-            if len(splitted) == 0:
-                raise InvalidMediaPageError("Did not find a single language for talkid " + str(talkid)
-                        + " in the link \"" + link + "\"")
+        # Update the languages
+        languages = media_url_builder.__parse_languages(link,splitted)
+        talkdict.setdefault("languages",set()).update(languages)
 
-            # Join again to give the key in the langmap:
-            key = "-".join(splitted)
+        # Join again to give the key in the langmap:
+        key = media_url_builder.__list_to_langmap_key(list(languages))
 
-            # If it already exists, something is funny
-            if key in langmap:
-                raise InvalidMediaPageError("Found the language key \"" + key + "\" twice in the language map. "
-                        + "It was generated from both the links \"" + link + "\" as well as \""
-                        + langmap[key] + "\".")
+        langmap = talkdict.setdefault("langmap", dict())
 
-            langmap[ key ] = self.media_prefix + "/" + self.video_format + "/"  + link
+        if key in langmap:
+            raise InvalidMediaPageError("Found the language key \"" + key + "\" twice in the language map. "
+                    + "It was generated from both the links \"" + link + "\" as well as \""
+                    + langmap[key]["url"] + "\".")
 
-        if len(langmap) == 0:
-            raise UnknownTalkIdError(talkid)
-
-        return langmap
+        langmap[key] = {
+            "languages": languages,
+            "url": self.media_prefix + "/" + self.video_format + "/"  + link
+        }
 
     def get_languages(self,talkid):
         """
-        Get a set of 3 character language ids, for which audio tracks exist for this talkid.
+        Get a set of ISO 639-3 language codes for which audio tracks exist for this talkid.
         Not neccessarily a file with exactly this audio track or all combinations of audio
         tracks might exist.
 
         For example. If a file with deu, eng and rus exists as well as a file with spa and deu
         the result will be the set { deu, eng, spa, rus }.
         """
-        keys = self.get_language_url_map(talkid).keys()
+        try:
+            return self.cached[talkid]["languages"]
+        except KeyError:
+            raise UnknownTalkIdError(talkid)
 
-        res = set()
-        for s in [ x.split("-") for x in keys ]:
-            res.update(s)
-        return res
-
-    def get_url(self,talkid,lang="ALL"):
+    def get_url(self,talkid,language="ALL"):
         """
         Get the media url from the talkid
 
-        lang:  A list of 3 letter language codes which should be contained as the audio
-               languages of the file.
+        lang:  A list of ISO 639-3 language codes (as strings), which should be
+               contained as the audio tracks of the file.
                Examples are "[deu]" or "[deu,eng]". For a list of available languages
                for this file, see the returned values of the function get_languages()
 
-               The option also understands the special values "ALL", which returns the
+               The option also understands the special value "ALL", which returns the
                url of the file with the most audio tracks.
 
         If the talkid was not found on the server an UnknownTalkIdError is raised.
-        If the list of languages is invalid, an InvalidLanguagesError is raised.
-        If the media page cannot be parsed an InvalidMediaPageError is raised.
+        If the list of language codes is invalid, an InvalidLanguagesError is raised.
         """
-        langmap = self.get_language_url_map(talkid)
-        if lang == "ALL":
+        try:
+            langmap = self.cached[talkid]["langmap"]
+        except KeyError:
+            raise UnknownTalkIdError(talkid)
+
+        if language == "ALL":
             longestkey = ""
             for key in langmap.keys():
                 if len(key) > len(longestkey):
                     longestkey=key
-            return langmap[longestkey]
+            return langmap[longestkey]["url"]
         else:
             # TODO implement
             raise InvalidLanguagesError("Not yet implemented")
@@ -359,7 +468,7 @@ class fahrplan_data:
     """
     Get json data from Fahrplan and extract relevant part.
 
-    fahrplan_string can be an url or a file on the local disk 
+    fahrplan_string can be an url or a file on the local disk
     """
 
     def __get_fahrplan_as_text(self,fahrplan_json):
@@ -840,13 +949,13 @@ if __name__ == "__main__":
         selected_formats = [ f for f in conf.settings["video_preference"] if (f in available_formats) ]
         if len(selected_formats) == 0:
             raise SystemExit("None of formats accepted by the user("+str(conf.settings["video_preference"])+") could be found for "
-                             "the event \"" + selected_event["name"] + "\"." 
+                             "the event \"" + selected_event["name"] + "\". " 
                              "Use --list-formats to view the list of available video formats.")
         selected_formats = [ selected_formats[0] ]
     else:
         for f in args.format:
             if not f in available_formats:
-                raise SystemExit("The format \"" + f + "\" could not be found for the event \"" + selected_event["name"] + "\"."
+                raise SystemExit("The format \"" + f + "\" could not be found for the event \"" + selected_event["name"] + "\". "
                                  "Use --list-formats to view the list of available video formats.")
         selected_formats = args.format
 
