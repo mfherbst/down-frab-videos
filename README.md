@@ -29,6 +29,11 @@ For example the file
 6450
 ```
 downloads the talks with ids ``6258`` and ``6450``.
+For downloading only a small number of talks with the script the commandline syntax
+```
+./down_frab_videos.py --ids 6258 6450
+```
+is usually more convenient.
 
 Some of the options configured via the commandline can be configured more permanently via
 a configuration file as well.

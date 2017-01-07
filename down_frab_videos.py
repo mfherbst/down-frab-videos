@@ -865,6 +865,8 @@ def add_args_to_parser(parser):
     parser.add_argument("--listfile", metavar="listfile", type=str, default=None, 
                         help="The path to the file containing the talkids line-by-line.")
     parser.add_argument("--mindelay", metavar="seconds", type=int, default=3, help="Minimum delay between two downloads (to not annoy the media servers that much).")
+    parser.add_argument("--ids", metavar="talkid", type=int, nargs="+", default=[],
+                        help="A list of talkids to download.")
 
     # other modes:
     parser.add_argument("--list-formats", action='store_true', default=False, help="List the available formats for the selected chaos event and exit.")
@@ -882,10 +884,10 @@ def parse_args_from_parser(parser):
     if not (args.dump_config  or args.list_events or args.list_formats):
         args.download_mode = True
 
-        if args.listfile is None:
-            raise SystemExit("You need to supply --listfile or one of --list-formats, --list-events, --dump-config")
+        if args.listfile is None and len(args.list) == 0:
+            raise SystemExit("You need to supply one of --list, --listfile, --list-formats, --list-events, --dump-config")
 
-        if not os.path.exists(args.listfile):
+        if not args.listfile is None and not os.path.exists(args.listfile):
             raise SystemExit("The list file \"" + args.listfile + "\" does not exist.")
 
     else:
@@ -959,7 +961,7 @@ if __name__ == "__main__":
                                  "Use --list-formats to view the list of available video formats.")
         selected_formats = args.format
 
-    # 
+    #
     # Download videos
     #
     print(surround_text("Gathering lecture data for " + selected_event["name"]))
@@ -979,22 +981,32 @@ if __name__ == "__main__":
     # bundle fahrplan and builders into the downloader
     downloader = lecture_downloader(fahrplan,builders)
 
-    # read the id list:
-    try:
-        idreader = idlist_reader(args.listfile)
-    except IOError as e:
-        raise SystemExit("Error reading the list file \"" + args.listfile + "\": " + str(e))
-    except ValueError as e:
-        raise SystemExit("Error reading the list file \"" + args.listfile + "\": " + str(e))
+    # Initialise with the commandline talk ids:
+    idlist = args.ids
+
+    if args.listfile is None:
+        errorfile="errors"
+    else:
+        errorfile=args.listfile + ".errors"
+        # read the id list:
+        try:
+            idreader = idlist_reader(args.listfile)
+        except IOError as e:
+            raise SystemExit("Error reading the list file \"" + args.listfile + "\": " + str(e))
+        except ValueError as e:
+            raise SystemExit("Error reading the list file \"" + args.listfile + "\": " + str(e))
+
+        idlist.extend(idreader.idlist)
 
     # setup the error log
     try:
-        errlog = errorlog(args.listfile + ".errors")
+        errlog = errorlog(errorfile)
+        print("\nSaving an error log to the file \"" + errorfile + "\".")
     except IOError as e:
-        raise SystemExit("Error creating the errorlog file \"" + args.listfile + ".errors\": " + str(e))
+        raise SystemExit("Error creating the errorlog file \"" + errorfile + "\": " + str(e))
 
     # download the ids:
-    for talkid in idreader.idlist:
+    for talkid in idlist:
         print("\n" + surround_text(str(talkid)))
         timebarrier(args.mindelay)
 
