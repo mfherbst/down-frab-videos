@@ -308,28 +308,28 @@ class media_url_builder:
         # Different version of pycountry seem to use different keys.
         # Try a couple (Note: all ISO639-2T codes are ISO639-3 codes
         # as well)
-        for key3 in [ "iso639_3_code", "terminology", "iso639_2T_code" ]:
+        for key3 in [ "alpha_3", "iso639_3_code", "terminology", "iso639_2T_code",  ]:
             try:
                 langobject = pycountry.languages.get(**{key3: "deu"})
                 return key3
             except KeyError as e:
                  continue
-        return None
+        raise SystemExit("Could not determine pycountry iso_639_3 key")
 
     def __determine_iso_639_1_key():
-        """ Determine the key needed for accessing ISO 639-3
+        """ Determine the key needed for accessing ISO 639-1
             language codes using pycountry.
         """
         # Different version of pycountry seem to use different keys.
         # Try a couple (Note: all ISO639-2T codes are ISO639-3 codes
         # as well)
-        for key2 in [ "iso639_1_code", "alpha_2", "alpha2" ]:
+        for key2 in [ "alpha_2", "alpha2", "iso639_1_code", ]:
             try:
                 langobject = pycountry.languages.get(**{key2: "de"})
                 return key2
             except KeyError as e:
                  continue
-        return None
+        raise SystemExit("Could not determine pycountry iso_639_1 key")
 
     def __parse_languages(link, splitted):
         """ Take a splitted link and return the parsed
