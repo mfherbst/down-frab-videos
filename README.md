@@ -42,7 +42,8 @@ To get started with this you should dump the defaults somewhere using
 ./down_frab_videos.py --config path/to/config --dump-config
 ```
 
-## Required python dependencies
+## Requirements and Python dependencies
+- Python >= 3.5
 - [Beautiful Soup](https://pypi.python.org/pypi/beautifulsoup4)
 - [json](https://pypi.python.org/pypi/json)
 - [pycountry](https://pypi.python.org/pypi/pycountry/)
