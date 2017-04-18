@@ -1091,7 +1091,7 @@ if __name__ == "__main__":
     # download the ids:
     for talkid in idlist:
         print("\n" + surround_text(str(talkid)))
-        timebarrier(args.mindelay)
+        barrier = timebarrier(args.mindelay)
 
         try:
             downloader.download(talkid)
@@ -1106,3 +1106,4 @@ if __name__ == "__main__":
             print("Found invalid language codes for TalkId "
                   + str(talkid) + ": " + str(e))
             errlog.log(str(talkid))
+        del barrier
