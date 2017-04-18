@@ -69,6 +69,12 @@ class config:
                 "fahrplan": "https://fahrplan.events.ccc.de/congress/2016/Fahrplan",
                 "media_prefix": "https://cdn.media.ccc.de/congress/2016"
             },
+            "EH2017": {
+                "starts": "2017-04-14",
+                "name": "EH2017",
+                "media_prefix": "http://cdn.media.ccc.de/events/eh2017",
+                "fahrplan": "https://eh17.easterhegg.eu/Fahrplan",
+            },
         },
     }
 
