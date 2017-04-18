@@ -41,7 +41,7 @@ To get started with this you should dump the defaults using
 ```
 ./down_frab_videos.py --dump-config
 ```
-This will write a stub config to ``~/.config/.config/down_frab_videos/config.yaml``.
+This will write a stub config to ``~/.config/down_frab_videos/config.yaml``.
 
 ## Requirements and Python dependencies
 - Python >= 3.5
