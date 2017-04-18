@@ -911,7 +911,7 @@ def add_args_to_parser(parser):
     Add all required arguments to the parser object
     """
     # configuration:
-    parser.add_argument("--config", metavar="config_file", type=str, default="~/.mfhBin/down_frab_videos.yaml",
+    parser.add_argument("--config", metavar="config_file", type=str, default="~/.config/down_frab_videos/config.yaml",
                         help="Path to the config file used to determine the appropriate urls for the chaos events, ...")
     parser.add_argument("--event", default=None, type=str, metavar="event",
                         help="Select a specific chaos event, by default the most recent, known event is selected.")
@@ -964,7 +964,7 @@ def parse_args_from_parser(parser):
     return args
 
 if __name__ == "__main__":
-    # 
+    #
     # args
     #
     parser = argparse.ArgumentParser(description="Download videos from the Fahrplan and media system used for chaos events.")
@@ -992,6 +992,8 @@ if __name__ == "__main__":
     args.config = os.path.expanduser(args.config)
 
     if args.dump_config:
+        configdir = os.path.dirname(args.config)
+        os.makedirs(configdir,exist_ok=True)
         with open(args.config, "w") as f:
             f.write(config.default_config())
         print("Wrote config to \"" + args.config + "\".")

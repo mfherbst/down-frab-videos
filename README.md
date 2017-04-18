@@ -37,10 +37,11 @@ is usually more convenient.
 
 Some of the options configured via the commandline can be configured more permanently via
 a configuration file as well.
-To get started with this you should dump the defaults somewhere using
+To get started with this you should dump the defaults using
 ```
-./down_frab_videos.py --config path/to/config --dump-config
+./down_frab_videos.py --dump-config
 ```
+This will write a stub config to ``~/.config/.config/down_frab_videos/config.yaml``.
 
 ## Requirements and Python dependencies
 - Python >= 3.5
