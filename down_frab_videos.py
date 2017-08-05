@@ -1069,7 +1069,7 @@ if __name__ == "__main__":
     #
     print(surround_text("Gathering lecture data for " + selected_event["name"]))
     try:
-        print(" - Info about video files from \"" + domain_from_url(selected_event["media_prefix"]) + "\"")
+        print(" - Media file information from \"" + domain_from_url(selected_event["media_prefix"]) + "\" for the formats:")
         builders = []
         for form in selected_formats:
             print("    -", form)
