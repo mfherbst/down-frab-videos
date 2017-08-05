@@ -75,6 +75,12 @@ class config:
                 "media_prefix": "http://cdn.media.ccc.de/events/eh2017",
                 "fahrplan": "https://eh17.easterhegg.eu/Fahrplan",
             },
+            "SHA2017": {
+                "starts": "2017-08-05",
+                "name": "Still hacking away",
+                "fahrplan": "https://program.sha2017.org",
+                "media_prefix": "https://cdn.media.ccc.de/events/SHA2017",
+            },
         },
     }
 
