@@ -75,6 +75,12 @@ class config:
                 "media_prefix": "http://cdn.media.ccc.de/events/eh2017",
                 "fahrplan": "https://eh17.easterhegg.eu/Fahrplan",
             },
+#            "gpn17": {
+#                "starts": "2017-05-25",
+#                "name:" "gpn17",
+#                "media_prefix": "https://cdn.media.ccc.de/events/gpn/gpn17",
+#                "fahrplan": ""
+#            },
             "SHA2017": {
                 "starts": "2017-08-05",
                 "name": "Still hacking away",
@@ -86,14 +92,18 @@ class config:
 
     __default_config_comments = {
         "settings": {
-            "video_preference": "List of strings, giving the order of preference for the file formats to download",
+            "video_preference": "List of strings, giving the order of preference for " \
+                                "the file formats to download",
         },
         "events": {
             "32c3": {
                 "starts": "When does the event start? Format: yyyy-mm-dd",
                 "name": "The name of the event (should be the same as the key)",
-                "fahrplan": "Prefix url to the main Fahrplan page without index.html or similar. Expects a schedule.json to be directly below this path.",
-                "media_prefix": "Prefix url to the location of the media file. This url should present a list of available file formats.",
+                "fahrplan": "Prefix url to the main Fahrplan page without index.html or " \
+                            "similar. Expects a schedule.json to be directly below this " \
+                            "path.",
+                "media_prefix": "Prefix url to the location of the media file. " \
+                                "This url should present a list of available file formats.",
             },
         },
     }
@@ -854,7 +864,7 @@ class errorlog:
         self.ferr.write(surround_text(str(datetime.datetime.now())) + "\n")
         self.ferr.write("# List of talks not properly downloaded last run:\n")
         self.ferr.write("#    (use this file as listfile via\n")
-        self.ferr.write("#     --listfile \"" + path + "\"\n")
+        self.ferr.write("#     --file \"" + path + "\"\n")
         self.ferr.write("#    to rerun the download process with only the failed videos.)\n")
 
     def log(self,text):
@@ -928,11 +938,15 @@ def add_args_to_parser(parser):
                         "May be given multiple times to specify more than one format to download.")
 
     # downloading:
-    parser.add_argument("--listfile", metavar="listfile", type=str, default=None, 
-                        help="The path to the file containing the talkids line-by-line.")
-    parser.add_argument("--mindelay", metavar="seconds", type=int, default=3, help="Minimum delay between two downloads (to not annoy the media servers that much).")
-    parser.add_argument("--ids", metavar="talkid", type=int, nargs="+", default=[],
-                        help="A list of talkids to download.")
+    parser.add_argument("--file", metavar="listfile", type=str, default=None,
+                        help="A file which contains the talkids to download line " \
+                        "by line.")
+    parser.add_argument("--mindelay", metavar="seconds", type=int, default=3,
+                        help="Minimum delay between two downloads (to not annoy the " \
+                        "media servers that much).")
+    parser.add_argument("ids", nargs='*', default=[], type=int,
+                        help="Talk ids to download. These will be added to any of the ids, " \
+                        "which are found in a listfile provided by --file")
 
     # other modes:
     parser.add_argument("--list-formats", action='store_true', default=False, help="List the available formats for the selected chaos event and exit.")
@@ -954,17 +968,18 @@ def parse_args_from_parser(parser):
     if not (args.dump_config  or args.list_events or args.list_formats or args.version):
         args.download_mode = True
 
-        if args.listfile is None and len(args.ids) == 0:
-            raise SystemExit("You need to supply one of --ids, --listfile, --list-formats, --list-events, --dump-config")
+        if args.file is None and len(args.ids) == 0:
+            raise SystemExit("You need to supply some talk ids or one of "
+                             "--file, --list-formats, --list-events, --dump-config")
 
-        if not args.listfile is None and not os.path.exists(args.listfile):
-            raise SystemExit("The list file \"" + args.listfile + "\" does not exist.")
+        if not args.file is None and not os.path.exists(args.file):
+            raise SystemExit("The list file \"" + args.file + "\" does not exist.")
 
     else:
         args.download_mode = False
-        if args.listfile is not None or len(args.ids) > 0:
-            print("--listfile and --ids are ignored if one of --list-formats, --list-events, "
-                  "--dump-config, --version is specified,"
+        if args.file is not None or len(args.ids) > 0:
+            print("--file and all commandline-supplied ids are ignored if one of "
+                  "--list-formats, --list-events, --dump-config, --version is specified,"
                   "since no download will be done it these cases.")
 
     return args
@@ -1085,22 +1100,22 @@ if __name__ == "__main__":
     print(" - Finished: Got \"" + fahrplan.meta['conference'] + "\", version \"" + fahrplan.meta['version'] + "\"")
 
     # bundle fahrplan and builders into the downloader
-    downloader = lecture_downloader(fahrplan,builders)
+    downloader = lecture_downloader(fahrplan, builders)
 
     # Initialise with the commandline talk ids:
     idlist = args.ids
 
-    if args.listfile is None:
+    if args.file is None:
         errorfile="errors"
     else:
-        errorfile=args.listfile + ".errors"
+        errorfile=args.file + ".errors"
         # read the id list:
         try:
-            idreader = idlist_reader(args.listfile)
+            idreader = idlist_reader(args.file)
         except IOError as e:
-            raise SystemExit("Error reading the list file \"" + args.listfile + "\": " + str(e))
+            raise SystemExit("Error reading the list file \"" + args.file + "\": " + str(e))
         except ValueError as e:
-            raise SystemExit("Error reading the list file \"" + args.listfile + "\": " + str(e))
+            raise SystemExit("Error reading the list file \"" + args.file + "\": " + str(e))
 
         idlist.extend(idreader.idlist)
 

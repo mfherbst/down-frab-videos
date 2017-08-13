@@ -20,9 +20,11 @@ This includes:
 - The abstract and summary for the talk
 - The list of links and references
 
-In order to download talks, you just need to provide the script with a list of 4-digit talk ids. 
-These should be listed line-by-line in a file, handed over to the script via ``--listfile``.
-For example the file 
+In order to download talks, you just need to provide the script with a list of
+(usually 4-digit) talk ids.
+These should be listed line-by-line in a file, handed over to the script via the argument
+``--file``.
+For example the file
 ```
 6258
 # some crazy comment
@@ -31,7 +33,7 @@ For example the file
 downloads the talks with ids ``6258`` and ``6450``.
 For downloading only a small number of talks with the script the commandline syntax
 ```
-./down_frab_videos.py --ids 6258 6450
+./down_frab_videos.py 6258 6450
 ```
 is usually more convenient.
 
