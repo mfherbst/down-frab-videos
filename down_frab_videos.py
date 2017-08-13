@@ -28,15 +28,16 @@ import pycountry
 import textwrap
 
 # Info about this script:
-FILE=os.path.basename(__file__)
-VERSION="0.2.0"
-SOURCE="https://github.com/mfherbst/down-frab-videos"
-USER_AGENT=FILE + " " + VERSION + " (see " + SOURCE + ")"
+FILE = os.path.basename(__file__)
+VERSION = "0.2.0"
+SOURCE = "https://github.com/mfherbst/down-frab-videos"
+USER_AGENT = FILE + " " + VERSION + " (see " + SOURCE + ")"
+
 
 class config:
     __default_config = {
         "settings": {
-            "video_preference": [ "webm-hd", "h264-hq", "h264-hd" ], 
+            "video_preference": ["webm-hd", "h264-hq", "h264-hd"],
         },
         "events": {
             "32c3": {
@@ -75,12 +76,12 @@ class config:
                 "media_prefix": "http://cdn.media.ccc.de/events/eh2017",
                 "fahrplan": "https://eh17.easterhegg.eu/Fahrplan",
             },
-#            "gpn17": {
-#                "starts": "2017-05-25",
-#                "name:" "gpn17",
-#                "media_prefix": "https://cdn.media.ccc.de/events/gpn/gpn17",
-#                "fahrplan": ""
-#            },
+            # "gpn17": {
+            #     "starts": "2017-05-25",
+            #     "name:" "gpn17",
+            #     "media_prefix": "https://cdn.media.ccc.de/events/gpn/gpn17",
+            #     "fahrplan": ""
+            # },
             "SHA2017": {
                 "starts": "2017-08-05",
                 "name": "Still hacking away",
@@ -92,39 +93,40 @@ class config:
 
     __default_config_comments = {
         "settings": {
-            "video_preference": "List of strings, giving the order of preference for " \
-                                "the file formats to download",
+            "video_preference": "List of strings, giving the order of "
+                                "preference for the file formats to download",
         },
         "events": {
             "32c3": {
                 "starts": "When does the event start? Format: yyyy-mm-dd",
                 "name": "The name of the event (should be the same as the key)",
-                "fahrplan": "Prefix url to the main Fahrplan page without index.html or " \
-                            "similar. Expects a schedule.json to be directly below this " \
-                            "path.",
-                "media_prefix": "Prefix url to the location of the media file. " \
-                                "This url should present a list of available file formats.",
+                "fahrplan": "Prefix url to the main Fahrplan page without "
+                            "index.html or similar. Expects a schedule.json "
+                            "to be directly below this path.",
+                "media_prefix": "Prefix url to the location of the media file. "
+                                "This url should present a list of available file "
+                                "formats.",
             },
         },
     }
 
-    def __init__(self,file=None):
+    def __init__(self, file=None):
         """
         Parse the config from a file
 
-        If file is None the defaults will be used, else the defaults will be 
+        If file is None the defaults will be used, else the defaults will be
         updated with the parsed data
         """
 
         self.__settings = config.__default_config["settings"]
         self.__events = config.__default_config["events"]
         if file is not None:
-            if isinstance(file,str):
+            if isinstance(file, str):
                 with open(file) as f:
                     parsed = yaml.load(f)
             else:
                 parsed = yaml.load(file)
-            
+
             try:
                 self.__settings = parsed["settings"]
             except KeyError:
@@ -140,9 +142,10 @@ class config:
         mname = ""
         for name, event in self.events.items():
             try:
-                eventdate = datetime.date(*map(int,event["starts"].split("-")))
+                eventdate = datetime.date(*map(int, event["starts"].split("-")))
             except ValueError as e:
-                raise ValueError("Date format for starts field of event \""  +name + "\" is not valid: " + str(e))
+                raise ValueError("Date format for starts field of event \"" + name +
+                                 "\" is not valid: " + str(e))
 
             offset = datetime.date.today() - eventdate
             if offset < mrecent:
@@ -180,52 +183,59 @@ class config:
         string += "#\n"
         string += "# The keys have the following meanings:\n"
 
-        comments = yaml.safe_dump(config.__default_config_comments,default_flow_style=False)
+        comments = yaml.safe_dump(config.__default_config_comments,
+                                  default_flow_style=False)
         # add comment symbols in front of each new line:
-        string += re.sub("\n","\n# ", re.sub("^","# ", comments))
+        string += re.sub("\n", "\n# ", re.sub("^", "# ", comments))
         string += "\n########\n\n"
-        
+
         # add actual fields:
-        string += yaml.safe_dump(config.__default_config,default_flow_style=False)
+        string += yaml.safe_dump(config.__default_config, default_flow_style=False)
         string += "..."
         return string
+
 
 class UnknownTalkIdError(Exception):
     """
     Thrown if a talkid is not valid or cannot be found in the internal data
     """
-    def __init__(self,message):
+    def __init__(self, message):
         super(UnknownTalkIdError, self).__init__(message)
+
 
 class InvalidLanguagesError(Exception):
     """
     Thrown if a list of language ids is unknown or invalid
     """
-    def __init__(self,message):
-        super(InvalidLanguagesError,self).__init__(message)
+    def __init__(self, message):
+        super(InvalidLanguagesError, self).__init__(message)
+
 
 class InvalidFahrplanData(Exception):
     """
     Thrown if the downloaded Fahrplan file is not valid
     """
-    def __init__(self,message):
+    def __init__(self, message):
         super(InvalidFahrplanData, self).__init__(message)
+
 
 class InvalidMediaPageError(Exception):
     """
     Thrown if the media page is off an unknown format
     """
-    def __init__(self,short_message,long_message):
+    def __init__(self, short_message, long_message):
         super(InvalidMediaPageError, self).__init__(long_message)
         self.short_message = short_message
         self.long_message = long_message
+
 
 def get_format_list(media_prefix):
     """
     Check which media formats are available and return a list with them
     """
-    errorstring = "Could not download list of media formats from \"" + media_prefix + "/" + "\""
-    format_list=[]
+    errorstring = "Could not download list of media formats from \"" + \
+                  media_prefix + "/" + "\""
+    format_list = []
     try:
         req_headers = {
             'User-Agent': USER_AGENT,
@@ -239,13 +249,14 @@ def get_format_list(media_prefix):
     if (not req.ok):
         raise IOError(errorstring + ".")
 
-    soup = BeautifulSoup(req.content,"lxml")
+    soup = BeautifulSoup(req.content, "lxml")
     for link in soup.find_all('a'):
         hreftext = link.get('href')
         if (hreftext.rfind("/") > 0) and hreftext[:-1] != "..":
-            #is a valid media format since it contains a / and is not the parent
+            # is a valid media format since it contains a / and is not the parent
             format_list.append(hreftext[:-1])
     return format_list
+
 
 # TODO Rewrite this class. It has actually become some sort of parser for the
 #      media.ccc.de page. We could easily generalise it to contain a parsed version
@@ -274,11 +285,12 @@ class media_url_builder:
                           (True)
     """
 
-    def __init__(self,media_prefix, video_format, raise_on_error=False):
+    def __init__(self, media_prefix, video_format, raise_on_error=False):
         self.media_prefix = media_prefix
         self.video_format = video_format
 
-        errorstring = "Could not download list of media files from \"" + media_prefix + "/" + video_format + "\""
+        errorstring = "Could not download list of media files from \"" + media_prefix + \
+                      "/" + video_format + "\""
         try:
             req_headers = {
                 'User-Agent': USER_AGENT,
@@ -312,26 +324,29 @@ class media_url_builder:
         # }
         self.cached = dict()
 
-        errors=False
-        soup = BeautifulSoup(req.content,"lxml")
+        errors = False
+        soup = BeautifulSoup(req.content, "lxml")
         for link in soup.find_all('a'):
             hreftext = link.get('href')
             if hreftext.rfind(".") > 0 and len(hreftext) > 5:
                 # is a valid media link since it contains a . and a -
                 try:
-                    self.__parse_link(hreftext,self.cached)
+                    self.__parse_link(hreftext, self.cached)
                 except InvalidMediaPageError as e:
                     # TODO It feels a little wrong to have print statements in this class
                     #      Clean this up later ...
                     if not raise_on_error:
-                        errors=True
-                        print("      ... skipping \"" + hreftext + "\" ("+e.short_message+")")
+                        errors = True
+                        print("      ... skipping \"" + hreftext + "\" (" +
+                              e.short_message + ")")
                     else:
                         raise
 
         if errors:
-            print("\n      Note: The skipped files could not be parsed and will not be available")
-            print("            for download. Either patch this script or download them manually.\n")
+            print("\n      Note: The skipped files could not be parsed and will not be "
+                  "available")
+            print("            for download. Either patch this script or download them "
+                  "manually.\n")
 
         del soup
 
@@ -350,12 +365,12 @@ class media_url_builder:
         # Different version of pycountry seem to use different keys.
         # Try a couple (Note: all ISO639-2T codes are ISO639-3 codes
         # as well)
-        for key3 in [ "alpha_3", "iso639_3_code", "terminology", "iso639_2T_code",  ]:
+        for key3 in ["alpha_3", "iso639_3_code", "terminology", "iso639_2T_code", ]:
             try:
-                langobject = pycountry.languages.get(**{key3: "deu"})
+                pycountry.languages.get(**{key3: "deu"})
                 return key3
             except KeyError as e:
-                 continue
+                continue
         raise SystemExit("Could not determine pycountry iso_639_3 key")
 
     def __determine_iso_639_1_key():
@@ -365,12 +380,12 @@ class media_url_builder:
         # Different version of pycountry seem to use different keys.
         # Try a couple (Note: all ISO639-2T codes are ISO639-3 codes
         # as well)
-        for key2 in [ "alpha_2", "alpha2", "iso639_1_code", ]:
+        for key2 in ["alpha_2", "alpha2", "iso639_1_code", ]:
             try:
-                langobject = pycountry.languages.get(**{key2: "de"})
+                pycountry.languages.get(**{key2: "de"})
                 return key2
             except KeyError as e:
-                 continue
+                continue
         raise SystemExit("Could not determine pycountry iso_639_1 key")
 
     def __parse_languages(link, splitted):
@@ -405,16 +420,16 @@ class media_url_builder:
                 # i.e. we found the title.
                 break
 
-            errormsg=("encountered in link \"" + link + "\": \"" + part 
-                + "\". We expect that the languages follow the talkid and "
-                + "that the title follows the languages. The title "
-                + "should be indicated by an upper case or a number. "
-                + "Please check that this is the case.")
+            errormsg = ("encountered in link \"" + link + "\": \"" + part +
+                        "\". We expect that the languages follow the talkid and "
+                        "that the title follows the languages. The title "
+                        "should be indicated by an upper case or a number. "
+                        "Please check that this is the case.")
 
             if not part[0].islower():
                 raise InvalidMediaPageError("invalid language code",
-                                        "Language code which does not start with "
-                                       + "a lower case character " + errormsg)
+                                            "Language code which does not start with "
+                                            "a lower case character " + errormsg)
 
             try:
                 langobject = pycountry.languages.get(**{lang_inkey: part})
@@ -427,13 +442,14 @@ class media_url_builder:
                     break
                 else:
                     raise InvalidMediaPageError("invalid language code",
-                                                "Invalid " + lang_standard + " language code \""
-                                                + part + "\" " + errormsg)
+                                                "Invalid " + lang_standard +
+                                                " language code \"" +
+                                                part + "\" " + errormsg)
 
         if len(languages) == 0:
             raise InvalidMediaPageError("no languages found",
-                                        "Did not find a single language for link \"" + link
-                                        + "\"")
+                                        "Did not find a single language for link \"" +
+                                        link + "\"")
 
         return languages
 
@@ -445,15 +461,17 @@ class media_url_builder:
         talkdict = {}
 
         if len(splitted) < 4:
-            raise InvalidMediaPageError("failed to parse link","Could not split link: \"" + link + "\"")
+            raise InvalidMediaPageError("failed to parse link",
+                                        "Could not split link: \"" + link + "\"")
 
         # event-id-lang1-lang2-...-Title_format.extension
         try:
             talkid = int(splitted[1])
-            talkdict = outdict.setdefault(talkid,dict())
+            talkdict = outdict.setdefault(talkid, dict())
             talkdict["talkid"] = talkid
         except ValueError:
-            raise InvalidMediaPageError("invalid talkid", "Could not determine talkid in link: \"" + link + "\"")
+            raise InvalidMediaPageError("invalid talkid", "Could not determine talkid "
+                                        "in link: \"" + link + "\"")
 
         if splitted[0] != talkdict.setdefault("event", splitted[0]):
             raise InvalidMediaPageError("inconsistent information",
@@ -464,8 +482,8 @@ class media_url_builder:
                                         + talkdict["event"] + "\"")
 
         # Update the languages
-        languages = media_url_builder.__parse_languages(link,splitted)
-        talkdict.setdefault("languages",set()).update(languages)
+        languages = media_url_builder.__parse_languages(link, splitted)
+        talkdict.setdefault("languages", set()).update(languages)
 
         # Join again to give the key in the langmap:
         key = media_url_builder.__list_to_langmap_key(list(languages))
@@ -474,30 +492,32 @@ class media_url_builder:
 
         if key in langmap:
             raise InvalidMediaPageError("duplicated language set",
-                    "Found the language key \"" + key + "\" twice in the language map. "
-                    + "It was generated from both the links \"" + link + "\" as well as \""
-                    + langmap[key]["url"] + "\".")
+                                        "Found the language key \"" + key +
+                                        "\" twice in the language map. " +
+                                        "It was generated from both the links \"" +
+                                        link + "\" as well as \"" +
+                                        langmap[key]["url"] + "\".")
 
         langmap[key] = {
             "languages": languages,
-            "url": self.media_prefix + "/" + self.video_format + "/"  + link
+            "url": self.media_prefix + "/" + self.video_format + "/" + link
         }
 
-    def get_languages(self,talkid):
+    def get_languages(self, talkid):
         """
-        Get a set of ISO 639-3 language codes for which audio tracks exist for this talkid.
-        Not neccessarily a file with exactly this audio track or all combinations of audio
-        tracks might exist.
+        Get a set of ISO 639-3 language codes for which audio tracks exist for this
+        talkid. Not neccessarily a file with exactly this audio track or all combinations
+        of audio tracks might exist.
 
-        For example. If a file with deu, eng and rus exists as well as a file with spa and deu
-        the result will be the set { deu, eng, spa, rus }.
+        For example. If a file with deu, eng and rus exists as well as a file with spa
+        and deu the result will be the set { deu, eng, spa, rus }.
         """
         try:
             return self.cached[talkid]["languages"]
         except KeyError:
             raise UnknownTalkIdError(talkid)
 
-    def get_url(self,talkid,language="ALL"):
+    def get_url(self, talkid, language="ALL"):
         """
         Get the media url from the talkid
 
@@ -521,11 +541,12 @@ class media_url_builder:
             longestkey = ""
             for key in langmap.keys():
                 if len(key) > len(longestkey):
-                    longestkey=key
+                    longestkey = key
             return langmap[longestkey]["url"]
         else:
             # TODO implement
             raise InvalidLanguagesError("Not yet implemented")
+
 
 class fahrplan_data:
     """
@@ -534,13 +555,14 @@ class fahrplan_data:
     fahrplan_string can be an url or a file on the local disk
     """
 
-    def __get_fahrplan_as_text(self,fahrplan_json):
+    def __get_fahrplan_as_text(self, fahrplan_json):
         if os.path.exists(fahrplan_json):
             try:
                 with open(fahrplan_json) as f:
                     return f.read()
             except IOError as e:
-                raise IOError("Could not get the Fahrplan from \"" + fahrplan_json + "\": "  +str(e))
+                raise IOError("Could not get the Fahrplan from \"" + fahrplan_json +
+                              "\": " + str(e))
         else:
             errorstring = "Could not get the Fahrplan from \"" + fahrplan_json + "\""
             try:
@@ -549,7 +571,7 @@ class fahrplan_data:
                     'From': SOURCE,
                 }
 
-                req = requests.get(fahrplan_json,headers=req_headers)
+                req = requests.get(fahrplan_json, headers=req_headers)
             except IOError as e:
                 raise IOError(errorstring + ": " + str(e))
 
@@ -562,7 +584,7 @@ class fahrplan_data:
             # Request body as a unicode string
             return req.text
 
-    def __init__(self,fahrplan_page):
+    def __init__(self, fahrplan_page):
         self.__location = fahrplan_page + "/schedule.json"
         self.base_page = fahrplan_page
         fahrplan_raw = json.loads(self.__get_fahrplan_as_text(self.location))
@@ -586,10 +608,12 @@ class fahrplan_data:
                 all_talks = itertools.chain(*day['rooms'].values())
 
                 # insert them into the dictionary:
-                self.lectures.update({ talk['id'] : talk for talk in all_talks })
+                self.lectures.update({talk['id']: talk for talk in all_talks})
 
         except KeyError as e:
-            raise InvalidFahrplanData("Fahrplan file \"" + self.location + "\" is not in the expected format: Key \"" + str(e) + "\" is missing")
+            raise InvalidFahrplanData("Fahrplan file \"" + self.location +
+                                      "\" is not in the expected format: Key \"" +
+                                      str(e) + "\" is missing")
 
     @property
     def location(self):
@@ -597,6 +621,7 @@ class fahrplan_data:
         Get the json file from which the fahrplan data in this object has been extracted.
         """
         return self.__location
+
 
 def find_os_executable(executable):
     """
@@ -613,8 +638,9 @@ def find_os_executable(executable):
             return exe_path
     return None
 
-""" Class to manage different methods to download files from the net."""
+
 class download_manager:
+    """ Class to manage different methods to download files from the net."""
     def __init__(self):
         self.wget_path = find_os_executable("wget")
         self.curl_path = find_os_executable("curl")
@@ -627,27 +653,27 @@ class download_manager:
         elif self.curl_path is not None:
             self.automethod = "curl"
 
-    def _download_wget(self,url,folder=".",out=None):
-        args = [ self.wget_path, "--continue", "--show-progress",
-                "--user-agent=\"" + USER_AGENT + "\"" ]
+    def _download_wget(self, url, folder=".", out=None):
+        args = [self.wget_path, "--continue", "--show-progress",
+                "--user-agent=\"" + USER_AGENT + "\""]
         if out is not None:
             args.append("--output-document=" + str(out))
         args.append(url)
-        return subprocess.call( args, cwd=folder )
+        return subprocess.call(args, cwd=folder)
 
-    def _download_curl(self,url,folder=".",out=None):
+    def _download_curl(self, url, folder=".", out=None):
         if out is None:
             out = os.path.basename(url)
-        args = [ self.curl_path , "--continue-at", "-",
+        args = [self.curl_path, "--continue-at", "-",
                 "--location", "--user-agent",
                 "\"" + USER_AGENT + "\"",
-                "--output", out, url ]
-        return subprocess.call( args, cwd=folder )
+                "--output", out, url]
+        return subprocess.call(args, cwd=folder)
 
-    def _download_requests(self,url,folder=".",out=None):
+    def _download_requests(self, url, folder=".", out=None):
         if out is None:
             out = os.path.basename(url)
-        file_name = os.path.join(folder,out)
+        file_name = os.path.join(folder, out)
 
         req_headers = {
             'User-Agent': USER_AGENT,
@@ -665,7 +691,7 @@ class download_manager:
             else:
                 total_data_size = int(total_data_size)  # Convert from string to int
 
-                pbar_width=50      # Progress bar width
+                pbar_width = 50    # Progress bar width
                 sum_data_size = 0  # Size of data downloaded so far
                 for data in response.iter_content(chunk_size=4096):
                     sum_data_size += len(data)
@@ -686,8 +712,8 @@ class download_manager:
         else:
             raise ValueError("Unknown method: " + method)
 
-    def download(self,url,folder=".",out=None,method=None):
-        """Download an url into a folder. 
+    def download(self, url, folder=".", out=None, method=None):
+        """Download an url into a folder.
 
            method:    The method/program to use for download
                       - wget       use wget
@@ -706,31 +732,33 @@ class download_manager:
         #      exceptions instead
 
         if method is None:
-            return self.download(url,folder=folder, out=out,method=self.automethod)
+            return self.download(url, folder=folder, out=out, method=self.automethod)
 
         if not self.is_method_available(method):
             raise ValueError("Method not available: " + method)
 
         if method == "wget":
-            return self._download_wget(url,folder=folder,out=out)
+            return self._download_wget(url, folder=folder, out=out)
         elif method == "curl":
-            return self._download_curl(url,folder=folder,out=out)
+            return self._download_curl(url, folder=folder, out=out)
         elif method == "requests":
-            return self._download_requests(url,folder=folder,out=out)
+            return self._download_requests(url, folder=folder, out=out)
         else:
             raise SystemExit("We should never get to this branch. This is a bug.")
 
+
 class lecture_downloader:
-    def __init__(self,fahrplan_data, media_url_builders):
+    def __init__(self, fahrplan_data, media_url_builders):
         """
-        Initialise a lecture downloader. It requires a Fahrplan_data object and a media_url_builder for each media type to be
-        downloaded. The latter is supplied in the list media_url_builders
+        Initialise a lecture downloader. It requires a Fahrplan_data object and a
+        media_url_builder for each media type to be downloaded.
+        The latter is supplied in the list media_url_builders
         """
 
         self.fahrplan_data = fahrplan_data
         self.media_url_builders = media_url_builders
 
-    def info_text(self,talkid):
+    def info_text(self, talkid):
         # TODO Use markdown or offer to use markdown here
         #      => Make a pdf out of it?
         try:
@@ -740,7 +768,7 @@ class lecture_downloader:
             raise UnknownTalkIdError(talkid)
 
         try:
-            ret  = lecture['title'] + '\n'
+            ret = lecture['title'] + '\n'
             ret += lecture['subtitle'] + '\n\n'
 
             ret += "########################\n"
@@ -762,20 +790,23 @@ class lecture_downloader:
             ret += "#--       Links      --#\n"
             ret += "########################\n\n"
 
-            #maximum length of description string:
-            maxlength = max( [ len(x['title']) for x in lecture['links'] ])  
-            maxlength = min(maxlength,37)
+            # maximum length of description string:
+            maxlength = max(len(x['title']) for x in lecture['links'])
+            maxlength = min(maxlength, 37)
+            fmt = "  - {0:" + str(maxlength) + "s}   {1}\n"
 
             for link in lecture['links']:
-                ret += ("  - {0:" + str(maxlength) + "s}   {1}\n").format(link['title'],link['url'])
+                ret += fmt.format(link['title'], link['url'])
 
             return ret
         except KeyError as e:
-            raise InvalidFahrplanData("Fahrplan file \"" + fahrplan_data.location + "\" is not in the expected format: Key \"" + str(e) + "\" is missing")
+            raise InvalidFahrplanData("Fahrplan file \"" + fahrplan_data.location +
+                                      "\" is not in the expected format: Key \"" +
+                                      str(e) + "\" is missing")
 
         return ret
 
-    def download(self,talkid):
+    def download(self, talkid):
         try:
             # the fahrplan lecture object:
             lecture = self.fahrplan_data.lectures[talkid]
@@ -786,16 +817,17 @@ class lecture_downloader:
             # folder into which to download everything:
             folder = lecture['slug']
         except KeyError as e:
-            raise InvalidFahrplanData("Fahrplan file \"" + self.fahrplan_data.location
-                                      + "\" is not in the expected format: Key \"" + str(e) + "\" is missing")
+            raise InvalidFahrplanData("Fahrplan file \"" + self.fahrplan_data.location +
+                                      "\" is not in the expected format: Key \"" +
+                                      str(e) + "\" is missing")
 
         # make dir
         if not os.path.isdir("./" + folder + "/"):
             os.mkdir("./" + folder + "/")
 
         # write info page:
-        with open(folder+"/info_"+str(talkid)+".txt","wb") as f:
-            f.write( self.info_text(talkid).encode("utf-8"))
+        with open(folder+"/info_"+str(talkid)+".txt", "wb") as f:
+            f.write(self.info_text(talkid).encode("utf-8"))
 
         had_errors = False
 
@@ -808,20 +840,20 @@ class lecture_downloader:
                 url = builder.get_url(talkid)
 
                 # TODO this is not ideal, do this with exceptions
-                ret = down_manag.download(url,folder=folder)
+                ret = down_manag.download(url, folder=folder)
                 if ret != 0:
                     print("Could not download media file \"" + url + "\".")
                     had_errors = True
 
             except UnknownTalkIdError as e:
-                print("Could not download format \"" + builder.video_format + "\" for talkid \"" + str(talkid) + "\".")
+                print("Could not download format \"" + builder.video_format +
+                      "\" for talkid \"" + str(talkid) + "\".")
                 had_errors = True
-
 
         # download attachments
         for att in lecture['attachments']:
             # build full url to file:
-            url = self.fahrplan_data.base_page + "/"  + att['url']
+            url = self.fahrplan_data.base_page + "/" + att['url']
 
             if url.find("attachments/original/missing.png") != -1:
                 # marker file that the original attachment file has gone missing
@@ -830,16 +862,17 @@ class lecture_downloader:
             # download
             outfile = url[url.rfind("/")+1:]          # basename of the url
             outfile = outfile[:outfile.rfind("?")]    # ignore the tailling ?..... stuff
-            ret = down_manag.download(url,folder=folder,out=outfile)
+            ret = down_manag.download(url, folder=folder, out=outfile)
             if ret != 0:
-                print("Could not download attachment \"" + att + "\" to file \"" + outfile 
-                      + "\" in folder \""+ folder + "\".")
+                print("Could not download attachment \"" + att + "\" to file \"" + outfile
+                      + "\" in folder \"" + folder + "\".")
                 had_errors = True
 
-        #TODO go through links and download them if there are of a certain mime type
+        # TODO go through links and download them if there are of a certain mime type
 
         if had_errors:
             raise UnknownTalkIdError(str(talkid))
+
 
 def surround_text(text):
     no_hash = 8+len(text)
@@ -847,6 +880,7 @@ def surround_text(text):
     string += "#-- " + text + " --#\n"
     string += no_hash * "#"
     return string
+
 
 def domain_from_url(url):
     # url should be of the form http://user:pass@domain/file
@@ -857,34 +891,39 @@ def domain_from_url(url):
 
     return url.split("/")[2].split("@")[-1]
 
+
 class errorlog:
-    def __init__(self,path):
+    def __init__(self, path):
         self.ferr = None
-        self.ferr = open(path,"a")
+        self.ferr = open(path, "a")
         self.ferr.write(surround_text(str(datetime.datetime.now())) + "\n")
         self.ferr.write("# List of talks not properly downloaded last run:\n")
         self.ferr.write("#    (use this file as listfile via\n")
         self.ferr.write("#     --file \"" + path + "\"\n")
-        self.ferr.write("#    to rerun the download process with only the failed videos.)\n")
+        self.ferr.write("#    to rerun the download process with only the failed videos."
+                        ")\n")
 
-    def log(self,text):
+    def log(self, text):
         self.ferr.write(text + "\n")
 
     def __del__(self):
         if self.ferr is not None:
             self.ferr.close()
 
+
 class idlist_reader:
-    def __init__(self,path):
+    def __init__(self, path):
             if not os.path.exists(path):
                 raise IOError("Path \"" + path + "\" does not exist.")
 
             with open(path) as f:
                 try:
-                    self.idlist = [ line.split('#')[0].strip() for line in f.readlines() if not line.startswith("#") ]
-                    self.idlist = [ int(val) for val in self.idlist if len(val) > 0 ]
+                    self.idlist = [line.split('#')[0].strip() for line in f.readlines()
+                                   if not line.startswith("#")]
+                    self.idlist = [int(val) for val in self.idlist if len(val) > 0]
                 except ValueError as e:
                     raise ValueError("Invalid idlist file \""+path+"\": " + str(e))
+
 
 class timebarrier:
     """
@@ -892,71 +931,87 @@ class timebarrier:
     time span of secs_delay between its construction and destruction
     """
 
-    def __init__(self,secs_delay):
+    def __init__(self, secs_delay):
         """ Initialise the timebarrier class"""
         # The minimum time required at destrution:
         self.__req_endtime = secs_delay + time.time()
 
     @property
-    def required_endtime():
+    def required_endtime(self):
         return self.__req_endtime
 
     def __del__(self):
         # calc sleep time in seconds, at least 0
-        sleeptime = max(0,self.__req_endtime - time.time())
+        sleeptime = max(0, self.__req_endtime - time.time())
         time.sleep(sleeptime)
+
 
 def do_list_events(conf):
     print("The following events are configured:")
 
     if len(conf.events) == 0:
         return
-    
+
     # maximum length of all events:
-    maxlen = max(map(len,conf.events))
+    maxlen = max(map(len, conf.events))
+    fmt = "  - {0:" + str(maxlen) + "s} (started on {1}{2})"
 
     # print events:
     for name, event in sorted(conf.events.items()):
         extra = ""
         if name == conf.most_recent_event["name"]:
             extra = " -- most recent"
-        print(("  - {0:" + str(maxlen) + "s} (started on {1}{2})").format(name,event["starts"],extra))
+        print(fmt.format(name, event["starts"], extra))
+
 
 def add_args_to_parser(parser):
     """
     Add all required arguments to the parser object
     """
     # configuration:
-    parser.add_argument("--config", metavar="config_file", type=str, default="~/.config/down_frab_videos/config.yaml",
-                        help="Path to the config file used to determine the appropriate urls for the chaos events, ...")
+    parser.add_argument("--config", metavar="config_file", type=str,
+                        default="~/.config/down_frab_videos/config.yaml",
+                        help="Path to the config file used to determine the appropriate "
+                        "urls for the chaos events, ...")
     parser.add_argument("--event", default=None, type=str, metavar="event",
-                        help="Select a specific chaos event, by default the most recent, known event is selected.")
-    parser.add_argument("--format", metavar="video_format", type=str, action='append', default=None,
+                        help="Select a specific chaos event, by default the most recent, "
+                        "known event is selected.")
+    parser.add_argument("--format", metavar="video_format", type=str, action='append',
+                        default=None,
                         help="The format in which the videos should be downloaded. "
-                        "By default it downloads the available format of highest preference in the config file, "
-                        "try --list-formats to list the available formats for the selected event. "
-                        "May be given multiple times to specify more than one format to download.")
+                        "By default it downloads the available format of highest "
+                        "preference in the config file, try --list-formats to list the "
+                        "available formats for the selected event. May be given multiple "
+                        "times to specify more than one format to download.")
 
     # downloading:
     parser.add_argument("--file", metavar="listfile", type=str, default=None,
-                        help="A file which contains the talkids to download line " \
+                        help="A file which contains the talkids to download line "
                         "by line.")
     parser.add_argument("--mindelay", metavar="seconds", type=int, default=3,
-                        help="Minimum delay between two downloads (to not annoy the " \
+                        help="Minimum delay between two downloads (to not annoy the "
                         "media servers that much).")
     parser.add_argument("ids", nargs='*', default=[], type=int,
-                        help="Talk ids to download. These will be added to any of the ids, " \
-                        "which are found in a listfile provided by --file")
+                        help="Talk ids to download. These will be added to any of the "
+                        "ids, which are found in a listfile provided by --file")
 
     # other modes:
-    parser.add_argument("--list-formats", action='store_true', default=False, help="List the available formats for the selected chaos event and exit.")
-    parser.add_argument("--list-events", action='store_true', default=False, help="List the configured chaos events and exit.")
-    parser.add_argument("--dump-config", action='store_true', 
-                        help="Dump the default config to the file given via --config or the default location and exit.")
-    parser.add_argument("--version", action='store_true', default=False, help="Print version information and exit.")
+    parser.add_argument("--list-formats", action='store_true', default=False,
+                        help="List the available formats for the selected chaos event "
+                        "and exit.")
+    parser.add_argument("--list-events", action='store_true', default=False,
+                        help="List the configured chaos events and exit.")
+    parser.add_argument("--dump-config", action='store_true',
+                        help="Dump the default config to the file given via --config "
+                        "or the default location and exit.")
+    parser.add_argument("--version", action='store_true', default=False,
+                        help="Print version information and exit.")
 
     # behaviour:
-    parser.add_argument("--strict", action='store_true', default=False, help="Be more strict about the parsed data, e.g. abort on any error encountered.")
+    parser.add_argument("--strict", action='store_true', default=False,
+                        help="Be more strict about the parsed data, "
+                        "e.g. abort on any error encountered.")
+
 
 def parse_args_from_parser(parser):
     """
@@ -965,14 +1020,14 @@ def parse_args_from_parser(parser):
     """
     args = parser.parse_args()
 
-    if not (args.dump_config  or args.list_events or args.list_formats or args.version):
+    if not (args.dump_config or args.list_events or args.list_formats or args.version):
         args.download_mode = True
 
         if args.file is None and len(args.ids) == 0:
             raise SystemExit("You need to supply some talk ids or one of "
                              "--file, --list-formats, --list-events, --dump-config")
 
-        if not args.file is None and not os.path.exists(args.file):
+        if args.file is not None and not os.path.exists(args.file):
             raise SystemExit("The list file \"" + args.file + "\" does not exist.")
 
     else:
@@ -984,11 +1039,13 @@ def parse_args_from_parser(parser):
 
     return args
 
+
 if __name__ == "__main__":
     #
     # args
     #
-    parser = argparse.ArgumentParser(description="Download videos from the Fahrplan and media system used for chaos events.")
+    parser = argparse.ArgumentParser(description="Download videos from the Fahrplan and "
+                                     "media system used for chaos events.")
     add_args_to_parser(parser)
     args = parse_args_from_parser(parser)
 
@@ -1001,9 +1058,10 @@ if __name__ == "__main__":
     newconfig = os.path.expanduser("~/.config/down_frab_videos/config.yaml")
     if os.path.exists(oldconfig) and os.path.expanduser(args.config) == newconfig:
         configdir = os.path.dirname(newconfig)
-        os.makedirs(configdir,exist_ok=True)
+        os.makedirs(configdir, exist_ok=True)
         os.rename(oldconfig, newconfig)
-        print("NOTE: Moved old default config " + oldconfig + "\nto the new default location " + newconfig + ".")
+        print("NOTE: Moved old default config " + oldconfig + "\n"
+              "to the new default location " + newconfig + ".")
         print()
         args.config = newconfig
 
@@ -1011,7 +1069,7 @@ if __name__ == "__main__":
     # version
     #
     if args.version:
-        ret  = FILE  + " " + VERSION + "\n\n"
+        ret = FILE + " " + VERSION + "\n\n"
 
         ret += "Copyright © 2017 Michael F. Herbst.\n"
         ret += "License GPLv3+: GNU GPL version 3 or later\n"
@@ -1029,7 +1087,7 @@ if __name__ == "__main__":
 
     if args.dump_config:
         configdir = os.path.dirname(args.config)
-        os.makedirs(configdir,exist_ok=True)
+        os.makedirs(configdir, exist_ok=True)
         with open(args.config, "w") as f:
             f.write(config.default_config())
         print("Wrote config to \"" + args.config + "\".")
@@ -1048,13 +1106,13 @@ if __name__ == "__main__":
     if args.list_events:
         do_list_events(conf)
         sys.exit(0)
-  
+
     if args.event is None:
         selected_event = conf.most_recent_event
     else:
         selected_event = conf.events[args.event]
 
-    # 
+    #
     # Formats
     #
     available_formats = get_format_list(selected_event["media_prefix"])
@@ -1066,17 +1124,22 @@ if __name__ == "__main__":
         sys.exit(0)
 
     if args.format is None or len(args.format) == 0:
-        selected_formats = [ f for f in conf.settings["video_preference"] if (f in available_formats) ]
+        selected_formats = [f for f in conf.settings["video_preference"]
+                            if f in available_formats]
         if len(selected_formats) == 0:
-            raise SystemExit("None of formats accepted by the user("+str(conf.settings["video_preference"])+") could be found for "
-                             "the event \"" + selected_event["name"] + "\". " 
-                             "Use --list-formats to view the list of available video formats.")
-        selected_formats = [ selected_formats[0] ]
+            raise SystemExit("None of formats accepted by the user(" +
+                             str(conf.settings["video_preference"])+") could be found "
+                             "for the event \"" + selected_event["name"] + "\". "
+                             "Use --list-formats to view the list of "
+                             "available video formats.")
+        selected_formats = [selected_formats[0]]
     else:
         for f in args.format:
-            if not f in available_formats:
-                raise SystemExit("The format \"" + f + "\" could not be found for the event \"" + selected_event["name"] + "\". "
-                                 "Use --list-formats to view the list of available video formats.")
+            if f not in available_formats:
+                raise SystemExit("The format \"" + f + "\" could not be found for "
+                                 "the event \"" + selected_event["name"] + "\". "
+                                 "Use --list-formats to view the list of "
+                                 "available video formats.")
         selected_formats = args.format
 
     #
@@ -1084,11 +1147,13 @@ if __name__ == "__main__":
     #
     print(surround_text("Gathering lecture data for " + selected_event["name"]))
     try:
-        print(" - Media file information from \"" + domain_from_url(selected_event["media_prefix"]) + "\" for the formats:")
+        print(" - Media file information from \"" +
+              domain_from_url(selected_event["media_prefix"]) + "\" for the formats:")
         builders = []
         for form in selected_formats:
             print("    -", form)
-            builders.append(media_url_builder(selected_event["media_prefix"], form, raise_on_error=args.strict))
+            builders.append(media_url_builder(selected_event["media_prefix"], form,
+                                              raise_on_error=args.strict))
     except IOError as e:
         raise SystemExit("Could not download list of media files: " + str(e))
 
@@ -1097,7 +1162,8 @@ if __name__ == "__main__":
         fahrplan = fahrplan_data(selected_event["fahrplan"])
     except IOError as e:
         raise SystemExit("Could not download Fahrplan: " + str(e))
-    print(" - Finished: Got \"" + fahrplan.meta['conference'] + "\", version \"" + fahrplan.meta['version'] + "\"")
+    print(" - Finished: Got \"" + fahrplan.meta['conference'] + "\", "
+          "version \"" + fahrplan.meta['version'] + "\"")
 
     # bundle fahrplan and builders into the downloader
     downloader = lecture_downloader(fahrplan, builders)
@@ -1106,16 +1172,15 @@ if __name__ == "__main__":
     idlist = args.ids
 
     if args.file is None:
-        errorfile="errors"
+        errorfile = "errors"
     else:
-        errorfile=args.file + ".errors"
+        errorfile = args.file + ".errors"
         # read the id list:
         try:
             idreader = idlist_reader(args.file)
-        except IOError as e:
-            raise SystemExit("Error reading the list file \"" + args.file + "\": " + str(e))
-        except ValueError as e:
-            raise SystemExit("Error reading the list file \"" + args.file + "\": " + str(e))
+        except (IOError, ValueError) as e:
+            raise SystemExit("Error reading the list file \"" + args.file +
+                             "\": " + str(e))
 
         idlist.extend(idreader.idlist)
 
@@ -1124,7 +1189,8 @@ if __name__ == "__main__":
         errlog = errorlog(errorfile)
         print("\nSaving an error log to the file \"" + errorfile + "\".")
     except IOError as e:
-        raise SystemExit("Error creating the errorlog file \"" + errorfile + "\": " + str(e))
+        raise SystemExit("Error creating the errorlog file \"" + errorfile +
+                         "\": " + str(e))
 
     # download the ids:
     for talkid in idlist:
