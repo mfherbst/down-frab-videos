@@ -23,7 +23,7 @@ This includes:
 In order to download talks, you just need to provide the script with a list of
 (usually 4-digit) talk ids.
 These should be listed line-by-line in a file, handed over to the script via the argument
-``--file``.
+``--from-file``.
 For example the file
 ```
 6258

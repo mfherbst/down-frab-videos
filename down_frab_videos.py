@@ -899,7 +899,7 @@ class errorlog:
         self.ferr.write(surround_text(str(datetime.datetime.now())) + "\n")
         self.ferr.write("# List of talks not properly downloaded last run:\n")
         self.ferr.write("#    (use this file as listfile via\n")
-        self.ferr.write("#     --file \"" + path + "\"\n")
+        self.ferr.write("#     --from-file \"" + path + "\"\n")
         self.ferr.write("#    to rerun the download process with only the failed videos."
                         ")\n")
 
@@ -985,7 +985,8 @@ def add_args_to_parser(parser):
                         "times to specify more than one format to download.")
 
     # downloading:
-    parser.add_argument("--file", metavar="listfile", type=str, default=None,
+    parser.add_argument("--from-file", metavar="listfile", type=str, default=None,
+                        dest="file",
                         help="A file which contains the talkids to download line "
                         "by line.")
     parser.add_argument("--mindelay", metavar="seconds", type=int, default=3,
@@ -993,7 +994,7 @@ def add_args_to_parser(parser):
                         "media servers that much).")
     parser.add_argument("ids", nargs='*', default=[], type=int,
                         help="Talk ids to download. These will be added to any of the "
-                        "ids, which are found in a listfile provided by --file")
+                        "ids, which are found in a listfile provided by --from-file")
 
     # other modes:
     parser.add_argument("--list-formats", action='store_true', default=False,
@@ -1025,7 +1026,7 @@ def parse_args_from_parser(parser):
 
         if args.file is None and len(args.ids) == 0:
             raise SystemExit("You need to supply some talk ids or one of "
-                             "--file, --list-formats, --list-events, --dump-config")
+                             "--from-file, --list-formats, --list-events, --dump-config")
 
         if args.file is not None and not os.path.exists(args.file):
             raise SystemExit("The list file \"" + args.file + "\" does not exist.")
@@ -1033,7 +1034,7 @@ def parse_args_from_parser(parser):
     else:
         args.download_mode = False
         if args.file is not None or len(args.ids) > 0:
-            print("--file and all commandline-supplied ids are ignored if one of "
+            print("--from-file and all commandline-supplied ids are ignored if one of "
                   "--list-formats, --list-events, --dump-config, --version is specified,"
                   "since no download will be done it these cases.")
 
