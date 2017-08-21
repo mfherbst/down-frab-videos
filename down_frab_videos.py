@@ -88,6 +88,12 @@ class config:
                 "fahrplan": "https://program.sha2017.org",
                 "media_prefix": "https://cdn.media.ccc.de/events/SHA2017",
             },
+            "mrmcd2017": {
+                "starts": "2017-09-01",
+                "name": "mrmcd2017",
+                "fahrplan": "https://cfp.mrmcd.net/2017",
+                "media_prefix": "http://cdn.media.ccc.de/events/mrmcd/mrmcd17",
+            },
         },
     }
 
