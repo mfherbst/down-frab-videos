@@ -148,7 +148,7 @@ class config:
                                  "\" is not valid: " + str(e))
 
             offset = datetime.date.today() - eventdate
-            if offset < mrecent:
+            if offset < mrecent and offset.total_seconds() > 0:
                 mrecent = offset
                 mname = name
 
