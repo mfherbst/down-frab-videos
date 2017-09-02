@@ -21,9 +21,14 @@ This includes:
 - The abstract and summary for the talk
 - The list of links and references
 
-In order to download talks, you just need to provide the script with a list of
-(usually 4-digit) talk ids.
-These should be listed line-by-line in a file, handed over to the script via the argument
+In order to download talks, you just need to provide the script with a list of talk ids.
+You can find the talkid in the url of your webbrowser.
+For example the **frab** page with url ending in `events/8414.html`
+has the talkid `8414` and the **pretalx** page ending in `talk/VHLTSN/`
+corresponds to talkid `VHLTSN`.
+
+You can either list the talkids
+line-by-line in a file and hand that file over to the script via the argument
 ``--from-file``.
 For example the file
 ```
@@ -37,11 +42,6 @@ For downloading only a small number of talks with the script the commandline syn
 ./down_frab_videos.py 6258 6450
 ```
 is usually more convenient.
-
-You can find the talkid in the url of your webbrowser.
-For example the **frab** page with url ending in `events/8414.html`
-has the talkid `8414` and the **pretalx** page ending in `talk/VHLTSN/`
-corresponds to talkid `VHLTSN`.
 
 Some of the options configured via the commandline can be configured more permanently via
 a configuration file as well.
