@@ -813,19 +813,32 @@ class lecture_downloader:
         return ret
 
     def download(self, talkid):
-        try:
-            # the fahrplan lecture object:
-            lecture = self.fahrplan_data.lectures[talkid]
-        except KeyError as e:
-            raise UnknownTalkIdError(talkid)
+        """
+        Download the data assoicatied with a talk.
 
-        try:
-            # folder into which to download everything:
-            folder = lecture['slug']
-        except KeyError as e:
-            raise InvalidFahrplanData("Fahrplan file \"" + self.fahrplan_data.location +
-                                      "\" is not in the expected format: Key \"" +
-                                      str(e) + "\" is missing")
+        talkid can be an int (i.e. an actual numeric talkid)
+        or a slug (like pretalx uses it)
+        """
+        if isinstance(talkid, int):
+            try:
+                # the fahrplan lecture object:
+                lecture = self.fahrplan_data.lectures[talkid]
+
+                # folder into which to download everything:
+                folder = lecture['slug']
+            except KeyError as e:
+                raise UnknownTalkIdError(talkid)
+        elif isinstance(talkid, str):
+            lecture = [l for l in self.fahrplan_data.lectures.values()
+                       if l["slug"] == talkid]
+            if len(lecture) == 1:
+                lecture = lecture[0]
+            else:
+                raise UnknownTalkIdError(talkid)
+            title = lecture["title"]
+            title = re.sub("[^a-zA-Z]", "_", title)
+            folder = self.fahrplan_data.meta["conference"].replace(" ", "_") + \
+                "-" + str(lecture["id"]) + "-" + title
 
         # make dir
         if not os.path.isdir("./" + folder + "/"):
@@ -833,7 +846,7 @@ class lecture_downloader:
 
         # write info page:
         with open(folder+"/info_"+str(talkid)+".txt", "wb") as f:
-            f.write(self.info_text(talkid).encode("utf-8"))
+            f.write(self.info_text(lecture["id"]).encode("utf-8"))
 
         had_errors = False
 
@@ -843,7 +856,7 @@ class lecture_downloader:
         # download all media files:
         for builder in self.media_url_builders:
             try:
-                url = builder.get_url(talkid)
+                url = builder.get_url(lecture["id"])
 
                 # TODO this is not ideal, do this with exceptions
                 ret = down_manag.download(url, folder=folder)
@@ -922,11 +935,18 @@ class idlist_reader:
             if not os.path.exists(path):
                 raise IOError("Path \"" + path + "\" does not exist.")
 
+            self.idlist = []
             with open(path) as f:
                 try:
-                    self.idlist = [line.split('#')[0].strip() for line in f.readlines()
-                                   if not line.startswith("#")]
-                    self.idlist = [int(val) for val in self.idlist if len(val) > 0]
+                    idlist = [line.split('#')[0].strip() for line in f.readlines()
+                              if not line.startswith("#")]
+                    for val in idlist:
+                        if len(val) == 0:
+                            continue
+                        try:
+                            self.idlist.append(int(val))
+                        except ValueError:
+                            self.idlist.append(val)
                 except ValueError as e:
                     raise ValueError("Invalid idlist file \""+path+"\": " + str(e))
 
@@ -998,7 +1018,7 @@ def add_args_to_parser(parser):
     parser.add_argument("--mindelay", metavar="seconds", type=int, default=3,
                         help="Minimum delay between two downloads (to not annoy the "
                         "media servers that much).")
-    parser.add_argument("ids", nargs='*', default=[], type=int,
+    parser.add_argument("ids", nargs='*', default=[], type=str,
                         help="Talk ids to download. These will be added to any of the "
                         "ids, which are found in a listfile provided by --from-file")
 
@@ -1176,7 +1196,13 @@ if __name__ == "__main__":
     downloader = lecture_downloader(fahrplan, builders)
 
     # Initialise with the commandline talk ids:
-    idlist = args.ids
+    idlist = []
+    for id in args.ids:
+        try:
+            idc = int(id)
+        except ValueError:
+            idc = id
+        idlist.append(idc)
 
     if args.file is None:
         errorfile = "errors"
