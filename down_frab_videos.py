@@ -836,7 +836,7 @@ class lecture_downloader:
             else:
                 raise UnknownTalkIdError(talkid)
             title = lecture["title"]
-            title = re.sub("[^a-zA-Z]", "_", title)
+            title = re.sub("[^a-zA-Z0-9-_]", "_", title)
             folder = self.fahrplan_data.meta["conference"].replace(" ", "_") + \
                 "-" + str(lecture["id"]) + "-" + title
 
