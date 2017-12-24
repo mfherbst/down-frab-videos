@@ -94,6 +94,12 @@ class config:
                 "fahrplan": "https://cfp.mrmcd.net/2017",
                 "media_prefix": "http://cdn.media.ccc.de/events/mrmcd/mrmcd17",
             },
+            "34c3": {
+                "starts": "2017-12-27",
+                "name": "34c3",
+                "fahrplan": "https://fahrplan.events.ccc.de/congress/2017/Fahrplan/",
+                "media_prefix": "https://cdn.media.ccc.de/congress/2017",
+            },
         },
     }
 
