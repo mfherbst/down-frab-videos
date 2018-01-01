@@ -18,6 +18,7 @@ import yaml
 # web stuff
 import requests
 from bs4 import BeautifulSoup
+import bs4
 
 # date, time and language
 import datetime
@@ -32,6 +33,7 @@ FILE = os.path.basename(__file__)
 VERSION = "0.2.0"
 SOURCE = "https://github.com/mfherbst/down-frab-videos"
 USER_AGENT = FILE + " " + VERSION + " (see " + SOURCE + ")"
+DEFAULTCONFIG = "~/.config/down_frab_videos/config.yaml"
 
 
 class config:
@@ -241,6 +243,23 @@ class InvalidMediaPageError(Exception):
         self.long_message = long_message
 
 
+def wrap_bs4(content):
+    """
+    Wrapper around BeautifulSoup to test multiple parsers
+    """
+    known_parsers = ["lxml", "html5lib", "html.parser"]
+    for parser in known_parsers:
+        try:
+            return BeautifulSoup(content, parser)
+        except bs4.FeatureNotFound:
+            print("Warning: could not parse with {}, "
+                  "check your installation. ".format(parser))
+            if parser != known_parsers[-1]:
+                print("Falling back to next known parser.")
+
+    raise SystemExit("Could not apply any html parser")
+
+
 def get_format_list(media_prefix):
     """
     Check which media formats are available and return a list with them
@@ -261,7 +280,7 @@ def get_format_list(media_prefix):
     if (not req.ok):
         raise IOError(errorstring + ".")
 
-    soup = BeautifulSoup(req.content, "lxml")
+    soup = wrap_bs4(req.content)
     for link in soup.find_all('a'):
         hreftext = link.get('href')
         if (hreftext.rfind("/") > 0) and hreftext[:-1] != "..":
@@ -337,7 +356,7 @@ class media_url_builder:
         self.cached = dict()
 
         errors = False
-        soup = BeautifulSoup(req.content, "lxml")
+        soup = wrap_bs4(req.content)
         for link in soup.find_all('a'):
             hreftext = link.get('href')
             if hreftext.rfind(".") > 0 and len(hreftext) > 5:
@@ -1002,7 +1021,7 @@ def add_args_to_parser(parser):
     """
     # configuration:
     parser.add_argument("--config", metavar="config_file", type=str,
-                        default="~/.config/down_frab_videos/config.yaml",
+                        default=DEFAULTCONFIG,
                         help="Path to the config file used to determine the appropriate "
                         "urls for the chaos events, ...")
     parser.add_argument("--event", default=None, type=str, metavar="event",
@@ -1088,7 +1107,7 @@ if __name__ == "__main__":
     # TODO Temporary for backwards compatibility
     # Move the old default config to the new place
     oldconfig = os.path.expanduser("~/.mfhBin/down_frab_videos.yaml")
-    newconfig = os.path.expanduser("~/.config/down_frab_videos/config.yaml")
+    newconfig = os.path.expanduser(DEFAULTCONFIG)
     if os.path.exists(oldconfig) and os.path.expanduser(args.config) == newconfig:
         configdir = os.path.dirname(newconfig)
         os.makedirs(configdir, exist_ok=True)
