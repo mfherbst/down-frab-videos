@@ -1102,22 +1102,6 @@ if __name__ == "__main__":
     args = parse_args_from_parser(parser)
 
     #
-    # Compatiblity
-    #
-    # TODO Temporary for backwards compatibility
-    # Move the old default config to the new place
-    oldconfig = os.path.expanduser("~/.mfhBin/down_frab_videos.yaml")
-    newconfig = os.path.expanduser(DEFAULTCONFIG)
-    if os.path.exists(oldconfig) and os.path.expanduser(args.config) == newconfig:
-        configdir = os.path.dirname(newconfig)
-        os.makedirs(configdir, exist_ok=True)
-        os.rename(oldconfig, newconfig)
-        print("NOTE: Moved old default config " + oldconfig + "\n"
-              "to the new default location " + newconfig + ".")
-        print()
-        args.config = newconfig
-
-    #
     # version
     #
     if args.version:
