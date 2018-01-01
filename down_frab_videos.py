@@ -943,7 +943,7 @@ class errorlog:
         self.ferr.write(surround_text(str(datetime.datetime.now())) + "\n")
         self.ferr.write("# List of talks not properly downloaded last run:\n")
         self.ferr.write("#    (use this file as listfile via\n")
-        self.ferr.write("#     --from-file \"" + path + "\"\n")
+        self.ferr.write("#     --input-file \"" + path + "\"\n")
         self.ferr.write("#    to rerun the download process with only the failed videos."
                         ")\n")
 
@@ -1037,7 +1037,9 @@ def add_args_to_parser(parser):
 
     # downloading:
     parser.add_argument("--from-file", metavar="listfile", type=str, default=None,
-                        dest="file",
+                        dest="from_file", help="Deprecated. Use '--input-file' instead.")
+    parser.add_argument("-i", "--input-file",
+                        metavar="listfile", type=str, default=None, dest="file",
                         help="A file which contains the talkids to download line "
                         "by line.")
     parser.add_argument("--mindelay", metavar="seconds", type=int, default=3,
@@ -1045,7 +1047,7 @@ def add_args_to_parser(parser):
                         "media servers that much).")
     parser.add_argument("ids", nargs='*', default=[], type=str,
                         help="Talk ids to download. These will be added to any of the "
-                        "ids, which are found in a listfile provided by --from-file")
+                        "ids, which are found in a listfile provided by --input-file")
 
     # other modes:
     parser.add_argument("--list-formats", action='store_true', default=False,
@@ -1056,7 +1058,7 @@ def add_args_to_parser(parser):
     parser.add_argument("--dump-config", action='store_true',
                         help="Dump the default config to the file given via --config "
                         "or the default location and exit.")
-    parser.add_argument("--version", action='store_true', default=False,
+    parser.add_argument("-v", "--version", action='store_true', default=False,
                         help="Print version information and exit.")
 
     # behaviour:
@@ -1072,12 +1074,16 @@ def parse_args_from_parser(parser):
     """
     args = parser.parse_args()
 
+    if args.from_file is not None:
+        print("WARNING: The flag --from-file is deprecated. Use --input-file instead.")
+        args.file = args.from_file
+
     if not (args.dump_config or args.list_events or args.list_formats or args.version):
         args.download_mode = True
 
         if args.file is None and len(args.ids) == 0:
             raise SystemExit("You need to supply some talk ids or one of "
-                             "--from-file, --list-formats, --list-events, --dump-config")
+                             "--input-file, --list-formats, --list-events, --dump-config")
 
         if args.file is not None and not os.path.exists(args.file):
             raise SystemExit("The list file \"" + args.file + "\" does not exist.")
@@ -1085,7 +1091,7 @@ def parse_args_from_parser(parser):
     else:
         args.download_mode = False
         if args.file is not None or len(args.ids) > 0:
-            print("--from-file and all commandline-supplied ids are ignored if one of "
+            print("--input-file and all commandline-supplied ids are ignored if one of "
                   "--list-formats, --list-events, --dump-config, --version is specified,"
                   "since no download will be done it these cases.")
 
