@@ -29,7 +29,7 @@ corresponds to talkid `VHLTSN`.
 
 You can either list the talkids
 line-by-line in a file and hand that file over to the script via the argument
-``--from-file``.
+``--input-file``.
 For example the file
 ```
 6258
