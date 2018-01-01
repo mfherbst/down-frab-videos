@@ -244,23 +244,18 @@ class InvalidMediaPageError(Exception):
 
 
 def wrap_bs4(content):
-    try:
-        return BeautifulSoup(content, "lxml")
-    except bs4.FeatureNotFound:
-        print("Warning: could not parse with 'lxml', check your installation. "
-              "Falling back to 'html.parser'.")
-
-    try:
-        return BeautifulSoup(content, "html.parser")
-    except bs4.FeatureNotFound:
-        print("Warning: could not parse with 'html.parser', check your installation. "
-              "Falling back to 'html5lib'.")
-
-    try:
-        return BeautifulSoup(content, "html5lib")
-    except bs4.FeatureNotFound:
-        print("Error: could not parse with any of 'lxml', 'html.parser' and 'html5lib'. "
-              "Giving up.")
+    """
+    Wrapper around BeautifulSoup to test multiple parsers
+    """
+    known_parsers = ["lxml", "html5lib", "html.parser"]
+    for parser in known_parsers:
+        try:
+            return BeautifulSoup(content, parser)
+        except bs4.FeatureNotFound:
+            print("Warning: could not parse with {}, "
+                  "check your installation. ".format(parser))
+            if parser != known_parsers[-1]:
+                print("Falling back to next known parser.")
 
     raise SystemExit("Could not apply any html parser")
 
