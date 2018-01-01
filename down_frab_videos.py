@@ -18,6 +18,7 @@ import yaml
 # web stuff
 import requests
 from bs4 import BeautifulSoup
+import bs4
 
 # date, time and language
 import datetime
@@ -32,10 +33,12 @@ FILE = os.path.basename(__file__)
 VERSION = "0.2.0"
 SOURCE = "https://github.com/mfherbst/down-frab-videos"
 USER_AGENT = FILE + " " + VERSION + " (see " + SOURCE + ")"
+DEFAULTCONFIG = "~/.config/down_frab_videos/config.yaml"
 
 
 class config:
     __default_config = {
+        "htmlparser": "lxml",
         "settings": {
             "video_preference": ["webm-hd", "h264-hq", "h264-hd"],
         },
@@ -104,6 +107,7 @@ class config:
     }
 
     __default_config_comments = {
+        "htmlparser": "html parser used by BeautifulSoup (html5lib or lxml)",
         "settings": {
             "video_preference": "List of strings, giving the order of "
                                 "preference for the file formats to download",
@@ -132,12 +136,18 @@ class config:
 
         self.__settings = config.__default_config["settings"]
         self.__events = config.__default_config["events"]
+        self.__htmlparser = config.__default_config["htmlparser"]
         if file is not None:
             if isinstance(file, str):
                 with open(file) as f:
                     parsed = yaml.load(f)
             else:
                 parsed = yaml.load(file)
+
+            try:
+                self.__htmlparser = parsed["htmlparser"]
+            except KeyError:
+                pass
 
             try:
                 self.__settings = parsed["settings"]
@@ -168,6 +178,11 @@ class config:
 
         # make sure that the key and the name field are identical
         self.__most_recent_event["name"] = mname
+
+    @property
+    def htmlparser(self):
+        """Return the htmlparser name"""
+        return self.__htmlparser
 
     @property
     def settings(self):
@@ -241,7 +256,17 @@ class InvalidMediaPageError(Exception):
         self.long_message = long_message
 
 
-def get_format_list(media_prefix):
+def wrap_bs4(content, parser):
+    try:
+        return BeautifulSoup(content, parser)
+    except bs4.FeatureNotFound:
+        print("Could not instantiate BeautifulSoup.\n"
+              "Maybe try replacing 'lxml' by 'html5lib' in your configuration.\n"
+              "The error from BeautifulSoup is ")
+        raise
+
+
+def get_format_list(media_prefix, parser):
     """
     Check which media formats are available and return a list with them
     """
@@ -254,6 +279,7 @@ def get_format_list(media_prefix):
             'From': SOURCE,
         }
 
+        print("getting ", media_prefix + "/")
         req = requests.get(media_prefix + "/", headers=req_headers)
     except IOError as e:
         raise IOError(errorstring + ": " + str(e))
@@ -261,7 +287,7 @@ def get_format_list(media_prefix):
     if (not req.ok):
         raise IOError(errorstring + ".")
 
-    soup = BeautifulSoup(req.content, "lxml")
+    soup = wrap_bs4(req.content, parser)
     for link in soup.find_all('a'):
         hreftext = link.get('href')
         if (hreftext.rfind("/") > 0) and hreftext[:-1] != "..":
@@ -297,7 +323,7 @@ class media_url_builder:
                           (True)
     """
 
-    def __init__(self, media_prefix, video_format, raise_on_error=False):
+    def __init__(self, media_prefix, video_format, parser, raise_on_error=False):
         self.media_prefix = media_prefix
         self.video_format = video_format
 
@@ -337,7 +363,7 @@ class media_url_builder:
         self.cached = dict()
 
         errors = False
-        soup = BeautifulSoup(req.content, "lxml")
+        soup = wrap_bs4(req.content, parser)
         for link in soup.find_all('a'):
             hreftext = link.get('href')
             if hreftext.rfind(".") > 0 and len(hreftext) > 5:
@@ -1002,7 +1028,7 @@ def add_args_to_parser(parser):
     """
     # configuration:
     parser.add_argument("--config", metavar="config_file", type=str,
-                        default="~/.config/down_frab_videos/config.yaml",
+                        default=DEFAULTCONFIG,
                         help="Path to the config file used to determine the appropriate "
                         "urls for the chaos events, ...")
     parser.add_argument("--event", default=None, type=str, metavar="event",
@@ -1088,7 +1114,7 @@ if __name__ == "__main__":
     # TODO Temporary for backwards compatibility
     # Move the old default config to the new place
     oldconfig = os.path.expanduser("~/.mfhBin/down_frab_videos.yaml")
-    newconfig = os.path.expanduser("~/.config/down_frab_videos/config.yaml")
+    newconfig = os.path.expanduser(DEFAULTCONFIG)
     if os.path.exists(oldconfig) and os.path.expanduser(args.config) == newconfig:
         configdir = os.path.dirname(newconfig)
         os.makedirs(configdir, exist_ok=True)
@@ -1148,7 +1174,7 @@ if __name__ == "__main__":
     #
     # Formats
     #
-    available_formats = get_format_list(selected_event["media_prefix"])
+    available_formats = get_format_list(selected_event["media_prefix"], conf.htmlparser)
 
     if args.list_formats:
         print("Available media formats for " + selected_event["name"] + ":")
@@ -1186,7 +1212,7 @@ if __name__ == "__main__":
         for form in selected_formats:
             print("    -", form)
             builders.append(media_url_builder(selected_event["media_prefix"], form,
-                                              raise_on_error=args.strict))
+                                              conf.htmlparser, raise_on_error=args.strict))
     except IOError as e:
         raise SystemExit("Could not download list of media files: " + str(e))
 
