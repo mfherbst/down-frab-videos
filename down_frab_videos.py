@@ -78,12 +78,13 @@ class config:
                 "media_prefix": "http://cdn.media.ccc.de/events/eh2017",
                 "fahrplan": "https://eh17.easterhegg.eu/Fahrplan",
             },
-            # "gpn17": {
-            #     "starts": "2017-05-25",
-            #     "name:" "gpn17",
-            #     "media_prefix": "https://cdn.media.ccc.de/events/gpn/gpn17",
-            #     "fahrplan": ""
-            # },
+            "GPN17": {
+                "starts": "2017-05-25",
+                "name": "GPN17",
+                "media_prefix": "https://cdn.media.ccc.de/events/gpn/gpn17",
+                "fahrplan": "https://entropia.de/GPN17:Fahrplan",
+                "fahrplan_schedule": "https://entropia.de/GPN17:Fahrplan:JSON?action=raw",
+            },
             "SHA2017": {
                 "starts": "2017-08-05",
                 "name": "Still hacking away",
@@ -102,6 +103,13 @@ class config:
                 "fahrplan": "https://fahrplan.events.ccc.de/congress/2017/Fahrplan/",
                 "media_prefix": "https://cdn.media.ccc.de/congress/2017",
             },
+            "GPN18": {
+                "starts": "2018-05-10",
+                "name": "GPN18",
+                "media_prefix": "https://cdn.media.ccc.de/events/gpn/gpn18",
+                "fahrplan": "https://entropia.de/GPN18:Fahrplan",
+                "fahrplan_schedule": "https://entropia.de/GPN18:Fahrplan:JSON?action=raw",
+            },
         },
     }
 
@@ -117,6 +125,7 @@ class config:
                 "fahrplan": "Prefix url to the main Fahrplan page without "
                             "index.html or similar. Expects a schedule.json "
                             "to be directly below this path.",
+                "fahrplan_schedule": "A direct link to the schedule JSON.",
                 "media_prefix": "Prefix url to the location of the media file. "
                                 "This url should present a list of available file "
                                 "formats.",
@@ -615,8 +624,12 @@ class fahrplan_data:
             # Request body as a unicode string
             return req.text
 
-    def __init__(self, fahrplan_page):
-        self.__location = fahrplan_page + "/schedule.json"
+    def __init__(self, fahrplan_page, is_json):
+        if (is_json):
+            self.__location = fahrplan_page
+        else:
+            self.__location = fahrplan_page + "/schedule.json"
+
         self.base_page = fahrplan_page
         fahrplan_raw = json.loads(self.__get_fahrplan_as_text(self.location))
 
@@ -1200,8 +1213,14 @@ if __name__ == "__main__":
         raise SystemExit("Could not download list of media files: " + str(e))
 
     try:
-        print(" - Fahrplan from \"" + domain_from_url(selected_event["fahrplan"]) + "\".")
-        fahrplan = fahrplan_data(selected_event["fahrplan"])
+        if "fahrplan_schedule" in selected_event:
+            fahrplan_url = selected_event["fahrplan_schedule"]
+            is_fahrplan_json = True
+        else:
+            fahrplan_url = selected_event["fahrplan"]
+            is_fahrplan_json = False
+        print(" - Fahrplan from \"" + domain_from_url(fahrplan_url) + "\".")
+        fahrplan = fahrplan_data(fahrplan_url, is_fahrplan_json)
     except IOError as e:
         raise SystemExit("Could not download Fahrplan: " + str(e))
     print(" - Finished: Got \"" + fahrplan.meta['conference'] + "\", "
