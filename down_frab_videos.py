@@ -83,7 +83,7 @@ class config:
                 "name": "GPN17",
                 "media_prefix": "https://cdn.media.ccc.de/events/gpn/gpn17",
                 "fahrplan": "https://entropia.de/GPN17:Fahrplan",
-                "fahrplan_schedule": "https://entropia.de/GPN17:Fahrplan:JSON?action=raw",
+                "json_location": "https://entropia.de/GPN17:Fahrplan:JSON?action=raw",
             },
             "SHA2017": {
                 "starts": "2017-08-05",
@@ -108,7 +108,7 @@ class config:
                 "name": "GPN18",
                 "media_prefix": "https://cdn.media.ccc.de/events/gpn/gpn18",
                 "fahrplan": "https://entropia.de/GPN18:Fahrplan",
-                "fahrplan_schedule": "https://entropia.de/GPN18:Fahrplan:JSON?action=raw",
+                "json_location": "https://entropia.de/GPN18:Fahrplan:JSON?action=raw",
             },
         },
     }
@@ -125,7 +125,7 @@ class config:
                 "fahrplan": "Prefix url to the main Fahrplan page without "
                             "index.html or similar. Expects a schedule.json "
                             "to be directly below this path.",
-                "fahrplan_schedule": "A direct link to the schedule JSON.",
+                "json_location": "A direct link to the schedule JSON.",
                 "media_prefix": "Prefix url to the location of the media file. "
                                 "This url should present a list of available file "
                                 "formats.",
@@ -624,13 +624,15 @@ class fahrplan_data:
             # Request body as a unicode string
             return req.text
 
-    def __init__(self, fahrplan_page, is_json):
-        if (is_json):
-            self.__location = fahrplan_page
-        else:
-            self.__location = fahrplan_page + "/schedule.json"
+    def __init__(self, base_page, json_location):
+        """
+        Initialise a fahrplan_data object.
 
-        self.base_page = fahrplan_page
+        base_page      Url to the base page of the fahrplan data.
+        json_location  Location where json data is to be found.
+        """
+        self.base_page = base_page
+        self.__location = json_location
         fahrplan_raw = json.loads(self.__get_fahrplan_as_text(self.location))
 
         try:
@@ -1213,14 +1215,12 @@ if __name__ == "__main__":
         raise SystemExit("Could not download list of media files: " + str(e))
 
     try:
-        if "fahrplan_schedule" in selected_event:
-            fahrplan_url = selected_event["fahrplan_schedule"]
-            is_fahrplan_json = True
-        else:
-            fahrplan_url = selected_event["fahrplan"]
-            is_fahrplan_json = False
+        fahrplan_url = selected_event["fahrplan"]
+        json_location = selected_event.get("json_location",
+                                           fahrplan_url + "/schedule.json")
+
         print(" - Fahrplan from \"" + domain_from_url(fahrplan_url) + "\".")
-        fahrplan = fahrplan_data(fahrplan_url, is_fahrplan_json)
+        fahrplan = fahrplan_data(fahrplan_url, json_location)
     except IOError as e:
         raise SystemExit("Could not download Fahrplan: " + str(e))
     print(" - Finished: Got \"" + fahrplan.meta['conference'] + "\", "
