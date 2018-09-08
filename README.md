@@ -39,7 +39,7 @@ For example the file
 downloads the talks with ids ``6258`` and ``6450``.
 For downloading only a small number of talks with the script the commandline syntax
 ```
-./down_frab_videos.py 6258 6450
+./down-frab-videos 6258 6450
 ```
 is usually more convenient.
 
@@ -47,9 +47,14 @@ Some of the options configured via the commandline can be configured more perman
 a configuration file as well.
 To get started with this you should dump the defaults using
 ```
-./down_frab_videos.py --dump-config
+./down-frab_videos --dump-config
 ```
-This will write a stub config to ``~/.config/down_frab_videos/config.yaml``.
+This will write a stub config to ``~/.config/down-frab-videos/config.yaml``.
+
+## Installation
+```
+pip install down-frab-videos
+```
 
 ## Requirements and Python dependencies
 - Python >= 3.5

@@ -35,7 +35,7 @@ setup(
         'Environment :: Console',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Intended Audience :: Information Technology',
-        'Topic :: Internet :: WWW/HTTP :: Indexing/Search'
+        'Topic :: Internet :: WWW/HTTP :: Indexing/Search',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Operating System :: Unix',
