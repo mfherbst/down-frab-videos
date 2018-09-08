@@ -621,7 +621,8 @@ class download_manager:
 
 
 class lecture_downloader:
-    def __init__(self, fahrplan_data, media_url_builders):
+    def __init__(self, fahrplan_data, media_url_builders,
+                 download_directory=os.getcwd()):
         """
         Initialise a lecture downloader. It requires a Fahrplan_data object and a
         media_url_builder for each media type to be downloaded.
@@ -630,6 +631,7 @@ class lecture_downloader:
 
         self.fahrplan_data = fahrplan_data
         self.media_url_builders = media_url_builders
+        self.download_directory = download_directory
 
     def info_text(self, talkid):
         # TODO Use markdown or offer to use markdown here
@@ -692,7 +694,7 @@ class lecture_downloader:
                 lecture = self.fahrplan_data.lectures[talkid]
 
                 # folder into which to download everything:
-                folder = lecture['slug']
+                folder = os.path.join(self.download_directory, lecture['slug'])
             except KeyError as e:
                 raise UnknownTalkIdError(talkid)
         elif isinstance(talkid, str):
@@ -704,12 +706,12 @@ class lecture_downloader:
                 raise UnknownTalkIdError(talkid)
             title = lecture["title"]
             title = re.sub("[^a-zA-Z0-9-_]", "_", title)
-            folder = self.fahrplan_data.meta["conference"].replace(" ", "_") + \
+            subdir = self.fahrplan_data.meta["conference"].replace(" ", "_") + \
                 "-" + str(lecture["id"]) + "-" + title
+            folder = os.path.join(self.download_directory, subdir)
 
         # make dir
-        if not os.path.isdir("./" + folder + "/"):
-            os.mkdir("./" + folder + "/")
+        os.makedirs(folder + "/", exist_ok=True)
 
         # write info page:
         with open(folder+"/info_"+str(talkid)+".txt", "wb") as f:
@@ -889,7 +891,8 @@ def add_args_to_parser(parser):
                         help="Talk ids to download. These will be added to any of the "
                         "ids, which are found in a listfile provided by --input-file")
     parser.add_argument("-a", "--all", action="store_true", default=False,
-                        help="Download all talks of the selected event.")
+                        help="Download all talks of the selected event into a "
+                        "folder named like the event")
 
     # other modes:
     parser.add_argument("--list-formats", action='store_true', default=False,
@@ -1065,11 +1068,15 @@ def main():
     print(" - Finished: Got \"" + fahrplan.meta['conference'] + "\", "
           "version \"" + fahrplan.meta['version'] + "\"")
 
+    download_directory = os.getcwd()
     if args.all:
         args.ids = fahrplan.all_talkids()
+        download_directory = os.path.join(download_directory,
+                                          selected_event["name"])
 
     # bundle fahrplan and builders into the downloader
-    downloader = lecture_downloader(fahrplan, builders)
+    downloader = lecture_downloader(fahrplan, builders,
+                                    download_directory=download_directory)
 
     # Initialise with the commandline talk ids:
     idlist = []
