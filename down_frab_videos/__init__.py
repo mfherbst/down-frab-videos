@@ -28,10 +28,10 @@ import textwrap
 from .config import config
 
 # Info about this script:
-FILE = os.path.basename(__file__)
+PROJECT = "down-frab-videos"
 VERSION = "0.5.1"
 SOURCE = "https://github.com/mfherbst/down-frab-videos"
-USER_AGENT = FILE + " " + VERSION + " (see " + SOURCE + ")"
+USER_AGENT = PROJECT + " " + VERSION + " (see " + SOURCE + ")"
 DEFAULTCONFIG = "~/.config/down-frab-videos/config.yaml"
 
 
@@ -943,7 +943,7 @@ def main():
     # version
     #
     if args.version:
-        ret = FILE + " " + VERSION + "\n\n"
+        ret = PROJECT + " " + VERSION + "\n\n"
 
         ret += "Copyright © 2017 Michael F. Herbst.\n"
         ret += "License GPLv3+: GNU GPL version 3 or later\n"
