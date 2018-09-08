@@ -110,6 +110,12 @@ class config:
                 "fahrplan": "https://entropia.de/GPN18:Fahrplan",
                 "json_location": "https://entropia.de/GPN18:Fahrplan:JSON?action=raw",
             },
+            "mrmcd2018": {
+                "starts": "2018-09-07",
+                "name": "mrmcd2018",
+                "fahrplan": "https://talks.mrmcd.net/2018",
+                "media_prefix": "http://cdn.media.ccc.de/events/mrmcd/mrmcd18",
+            },
         },
     }
 
