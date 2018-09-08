@@ -28,7 +28,7 @@ import textwrap
 from .config import config
 
 
-__version__ = "0.5.1"
+__version__ = "0.5.2"
 __licence__ = "GPL v3"
 __authors__ = "Michael F. Herbsty"
 __email__ = "info@michael-herbst.com"
