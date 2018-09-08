@@ -28,7 +28,7 @@ import textwrap
 
 # Info about this script:
 FILE = os.path.basename(__file__)
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 SOURCE = "https://github.com/mfherbst/down-frab-videos"
 USER_AGENT = FILE + " " + VERSION + " (see " + SOURCE + ")"
 DEFAULTCONFIG = "~/.config/down-frab-videos/config.yaml"
