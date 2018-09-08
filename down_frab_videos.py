@@ -1057,8 +1057,6 @@ def add_args_to_parser(parser):
                         "times to specify more than one format to download.")
 
     # downloading:
-    parser.add_argument("--from-file", metavar="listfile", type=str, default=None,
-                        dest="from_file", help="Deprecated. Use '--input-file' instead.")
     parser.add_argument("-i", "--input-file",
                         metavar="listfile", type=str, default=None, dest="file",
                         help="A file which contains the talkids to download line "
@@ -1094,10 +1092,6 @@ def parse_args_from_parser(parser):
     Return the args parsed, raise SystemExit on any error.
     """
     args = parser.parse_args()
-
-    if args.from_file is not None:
-        print("WARNING: The flag --from-file is deprecated. Use --input-file instead.")
-        args.file = args.from_file
 
     if not (args.dump_config or args.list_events or args.list_formats or args.version):
         args.download_mode = True
