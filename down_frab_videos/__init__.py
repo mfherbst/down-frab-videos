@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
 # vi: set et ts=4 sw=4 sts=4:
-
 # os and sys interaction
 import sys
 import subprocess
@@ -33,7 +31,7 @@ FILE = os.path.basename(__file__)
 VERSION = "0.4.0"
 SOURCE = "https://github.com/mfherbst/down-frab-videos"
 USER_AGENT = FILE + " " + VERSION + " (see " + SOURCE + ")"
-DEFAULTCONFIG = "~/.config/down_frab_videos/config.yaml"
+DEFAULTCONFIG = "~/.config/down-frab-videos/config.yaml"
 
 
 class config:
@@ -1113,7 +1111,7 @@ def parse_args_from_parser(parser):
     return args
 
 
-if __name__ == "__main__":
+def main():
     #
     # args
     #
@@ -1141,6 +1139,19 @@ if __name__ == "__main__":
     # config
     #
     args.config = os.path.expanduser(args.config)
+
+    # TMP: This is for the transition to the new config name
+    config_old = "~/.config/down-frab-videos/config.yaml"
+    if os.path.isfile(config_old):
+        import warnings
+        import shutil
+        warnings.warn("Moving config {} to new location {}"
+                      "".format(config_old, DEFAULTCONFIG))
+        shutil.move(config_old, DEFAULTCONFIG)
+
+        if args.config == config_old:
+            args.config = DEFAULTCONFIG
+    # end TMP
 
     if args.dump_config:
         configdir = os.path.dirname(args.config)
@@ -1278,3 +1289,7 @@ if __name__ == "__main__":
                   + str(talkid) + ": " + str(e))
             errlog.log(str(talkid))
         del barrier
+
+
+if __name__ == "__main__":
+    main()
