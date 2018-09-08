@@ -1067,7 +1067,6 @@ def main():
 
     if args.all:
         args.ids = fahrplan.all_talkids()
-        print(args.ids)
 
     # bundle fahrplan and builders into the downloader
     downloader = lecture_downloader(fahrplan, builders)
