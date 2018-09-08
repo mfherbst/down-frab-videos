@@ -25,7 +25,7 @@ import pycountry
 # Output text formatting
 import textwrap
 
-from config import config
+from .config import config
 
 # Info about this script:
 FILE = os.path.basename(__file__)
@@ -485,6 +485,9 @@ class fahrplan_data:
         """
         return self.__location
 
+    def all_talkids(self):
+        return [v.get("slug", k) for k, v in self.lectures.items()]
+
 
 def find_os_executable(executable):
     """
@@ -878,6 +881,8 @@ def add_args_to_parser(parser):
     parser.add_argument("ids", nargs='*', default=[], type=str,
                         help="Talk ids to download. These will be added to any of the "
                         "ids, which are found in a listfile provided by --input-file")
+    parser.add_argument("-a", "--all", action="store_true", default=False,
+                        help="Download all talks of the selected event.")
 
     # other modes:
     parser.add_argument("--list-formats", action='store_true', default=False,
@@ -907,9 +912,10 @@ def parse_args_from_parser(parser):
     if not (args.dump_config or args.list_events or args.list_formats or args.version):
         args.download_mode = True
 
-        if args.file is None and len(args.ids) == 0:
+        if args.file is None and len(args.ids) == 0 and not args.all:
             raise SystemExit("You need to supply some talk ids or one of "
-                             "--input-file, --list-formats, --list-events, --dump-config")
+                             "--all, --input-file, --list-formats, "
+                             "--list-events, --dump-config")
 
         if args.file is not None and not os.path.exists(args.file):
             raise SystemExit("The list file \"" + args.file + "\" does not exist.")
@@ -1050,6 +1056,10 @@ def main():
     print(" - Finished: Got \"" + fahrplan.meta['conference'] + "\", "
           "version \"" + fahrplan.meta['version'] + "\"")
 
+    if args.all:
+        args.ids = fahrplan.all_talkids()
+        print(args.ids)
+
     # bundle fahrplan and builders into the downloader
     downloader = lecture_downloader(fahrplan, builders)
 
@@ -1084,7 +1094,7 @@ def main():
                          "\": " + str(e))
 
     # download the ids:
-    for talkid in idlist:
+    for talkid in sorted(set(idlist)):
         print("\n" + surround_text(str(talkid)))
         barrier = timebarrier(args.mindelay)
 
