@@ -27,12 +27,13 @@ import textwrap
 
 from .config import config
 
-# Info about this script:
-PROJECT = "down-frab-videos"
-VERSION = "0.5.1"
-SOURCE = "https://github.com/mfherbst/down-frab-videos"
-USER_AGENT = PROJECT + " " + VERSION + " (see " + SOURCE + ")"
-DEFAULTCONFIG = "~/.config/down-frab-videos/config.yaml"
+
+__version__ = "0.5.1"
+__licence__ = "GPL v3"
+__authors__ = "Michael F. Herbsty"
+__email__ = "info@michael-herbst.com"
+__package__ = "down-frab-videos"
+__upstream__ = "https://github.com/mfherbst/down-frab-videos"
 
 
 class UnknownTalkIdError(Exception):
@@ -93,10 +94,12 @@ def get_format_list(media_prefix):
     errorstring = "Could not download list of media formats from \"" + \
                   media_prefix + "/" + "\""
     format_list = []
+
+    user_agent = __package__ + " " + __version__ + " (see " + __upstream__ + ")"
     try:
         req_headers = {
-            'User-Agent': USER_AGENT,
-            'From': SOURCE,
+            'User-Agent': user_agent,
+            'From': __upstream__,
         }
 
         req = requests.get(media_prefix + "/", headers=req_headers)
@@ -146,12 +149,13 @@ class media_url_builder:
         self.media_prefix = media_prefix
         self.video_format = video_format
 
+        user_agent = __package__ + " " + __version__ + " (see " + __upstream__ + ")"
         errorstring = "Could not download list of media files from \"" + media_prefix + \
                       "/" + video_format + "\""
         try:
             req_headers = {
-                'User-Agent': USER_AGENT,
-                'From': SOURCE,
+                'User-Agent': user_agent,
+                'From': __upstream__,
             }
 
             req = requests.get(media_prefix + "/" + video_format, headers=req_headers)
@@ -422,10 +426,11 @@ class fahrplan_data:
                               "\": " + str(e))
         else:
             errorstring = "Could not get the Fahrplan from \"" + fahrplan_json + "\""
+            user_agent = __package__ + " " + __version__ + " (see " + __upstream__ + ")"
             try:
                 req_headers = {
-                    'User-Agent': USER_AGENT,
-                    'From': SOURCE,
+                    'User-Agent': user_agent,
+                    'From': __upstream__,
                 }
 
                 req = requests.get(fahrplan_json, headers=req_headers)
@@ -510,6 +515,8 @@ class download_manager:
     def __init__(self):
         self.wget_path = find_os_executable("wget")
         self.curl_path = find_os_executable("curl")
+        self.user_agent = __package__ + " " + __version__ + \
+            " (see " + __upstream__ + ")"
 
         # self.automethod decides which method is chosen if
         # method="auto" is supplied to download
@@ -521,7 +528,7 @@ class download_manager:
 
     def _download_wget(self, url, folder=".", out=None):
         args = [self.wget_path, "--continue", "--show-progress",
-                "--user-agent=\"" + USER_AGENT + "\""]
+                "--user-agent=\"" + self.user_agent + "\""]
         if out is not None:
             args.append("--output-document=" + str(out))
         args.append(url)
@@ -532,7 +539,7 @@ class download_manager:
             out = os.path.basename(url)
         args = [self.curl_path, "--continue-at", "-",
                 "--location", "--user-agent",
-                "\"" + USER_AGENT + "\"",
+                "\"" + self.user_agent + "\"",
                 "--output", out, url]
         return subprocess.call(args, cwd=folder)
 
@@ -542,8 +549,8 @@ class download_manager:
         file_name = os.path.join(folder, out)
 
         req_headers = {
-            'User-Agent': USER_AGENT,
-            'From': SOURCE,
+            'User-Agent': self.user_agent,
+            'From': __upstream__,
         }
 
         with open(file_name, "wb") as f:
@@ -856,7 +863,7 @@ def add_args_to_parser(parser):
     """
     # configuration:
     parser.add_argument("--config", metavar="config_file", type=str,
-                        default=DEFAULTCONFIG,
+                        default="~/.config/down-frab-videos/config.yaml",
                         help="Path to the config file used to determine the appropriate "
                         "urls for the chaos events, ...")
     parser.add_argument("--event", default=None, type=str, metavar="event",
@@ -943,14 +950,14 @@ def main():
     # version
     #
     if args.version:
-        ret = PROJECT + " " + VERSION + "\n\n"
+        ret = __package__ + " " + __version__ + "\n\n"
 
-        ret += "Copyright © 2017 Michael F. Herbst.\n"
+        ret += "Copyright © 2017 " + __authors__ + ".\n"
         ret += "License GPLv3+: GNU GPL version 3 or later\n"
         ret += "<http://www.gnu.org/licenses/gpl.html>.\n\n"
 
         ret += "Please report bugs and suggest enhancements under\n"
-        ret += "<" + SOURCE + ">.\n"
+        ret += "<" + __upstream__ + ">.\n"
         print(ret[:-1])
         sys.exit(0)
 
@@ -964,12 +971,14 @@ def main():
     if os.path.isfile(config_old):
         import warnings
         import shutil
+        config_new = "~/.config/down-frab-videos/config.yaml"
+
         warnings.warn("Moving config {} to new location {}"
-                      "".format(config_old, DEFAULTCONFIG))
-        shutil.move(config_old, DEFAULTCONFIG)
+                      "".format(config_old, config_new))
+        shutil.move(config_old, config_new)
 
         if args.config == config_old:
-            args.config = DEFAULTCONFIG
+            args.config = config_new
     # end TMP
 
     if args.dump_config:
@@ -1112,7 +1121,3 @@ def main():
                   + str(talkid) + ": " + str(e))
             errlog.log(str(talkid))
         del barrier
-
-
-if __name__ == "__main__":
-    main()
