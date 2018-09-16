@@ -30,7 +30,7 @@ from .config import config
 
 __version__ = "0.5.3"
 __licence__ = "GPL v3"
-__authors__ = "Michael F. Herbsty"
+__authors__ = "Michael F. Herbst"
 __email__ = "info@michael-herbst.com"
 __package__ = "down-frab-videos"
 __upstream__ = "https://github.com/mfherbst/down-frab-videos"

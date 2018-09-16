@@ -11,7 +11,7 @@ A list of configured events and available formats for a given event can be print
 (using flags ``--list-events`` and ``--list-formats``).
 For a list of all flags the script understands, try
 ```
-./down_frab_videos.py --help
+down-frab-videos --help
 ```
 
 When downloading a talk the script will not only download the recording,
@@ -36,18 +36,18 @@ For example the file
 # some crazy comment
 6450
 ```
-downloads the talks with ids ``6258`` and ``6450``.
-For downloading only a small number of talks with the script the commandline syntax
+downloads the talks with IDs ``6258`` and ``6450``.
+For downloading only a small number of talks with the script the command line syntax
 ```
-./down-frab-videos 6258 6450
+down-frab-videos 6258 6450
 ```
 is usually more convenient.
 
-Some of the options configured via the commandline can be configured more permanently via
+Some of the options configured via the command line can be set more permanently via
 a configuration file as well.
 To get started with this you should dump the defaults using
 ```
-./down-frab_videos --dump-config
+down-frab-videos --dump-config
 ```
 This will write a stub config to ``~/.config/down-frab-videos/config.yaml``.
 
