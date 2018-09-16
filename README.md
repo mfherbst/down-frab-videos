@@ -36,7 +36,7 @@ For example the file
 # some crazy comment
 6450
 ```
-downloads the talks with the IDs ``6258`` and ``6450``.
+downloads the talks with IDs ``6258`` and ``6450``.
 For downloading only a small number of talks with the script the command line syntax
 ```
 down-frab-videos 6258 6450
