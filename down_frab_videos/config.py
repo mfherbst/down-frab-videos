@@ -86,6 +86,12 @@ class config:
                 "fahrplan": "https://talks.mrmcd.net/2018",
                 "media_prefix": "http://cdn.media.ccc.de/events/mrmcd/mrmcd18",
             },
+            "35c3": {
+                "starts": "2018-12-27",
+                "name": "35c3",
+                "fahrplan": "https://fahrplan.events.ccc.de/congress/2018/Fahrplan/",
+                "media_prefix": "https://cdn.media.ccc.de/congress/2018",
+            },
         },
     }
 
