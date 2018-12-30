@@ -228,7 +228,9 @@ class media_url_builder:
         # as well)
         for key3 in ["alpha_3", "iso639_3_code", "terminology", "iso639_2T_code", ]:
             try:
-                pycountry.languages.get(**{key3: "deu"})
+                ret = pycountry.languages.get(**{key3: "deu"})
+                if ret is None:
+                    continue
                 return key3
             except KeyError:
                 continue
@@ -243,7 +245,9 @@ class media_url_builder:
         # as well)
         for key2 in ["alpha_2", "alpha2", "iso639_1_code", ]:
             try:
-                pycountry.languages.get(**{key2: "de"})
+                ret = pycountry.languages.get(**{key2: "de"})
+                if ret is None:
+                    continue
                 return key2
             except KeyError:
                 continue
