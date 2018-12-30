@@ -296,6 +296,11 @@ class media_url_builder:
                                             "Language code which does not start with "
                                             "a lower case character " + errormsg)
 
+            # Language code remapping ... the VOC is really not consistent
+            lang_remap = {"chi": "zhn"}
+            if part in lang_remap:
+                part = lang_remap[part]
+
             try:
                 langobject = pycountry.languages.get(**{lang_inkey: part})
             except KeyError:
