@@ -298,9 +298,13 @@ class media_url_builder:
 
             try:
                 langobject = pycountry.languages.get(**{lang_inkey: part})
+            except KeyError:
+                langobject = None
+
+            if langobject is not None:
                 languages.add(getattr(langobject, lang_outkey))
-            except KeyError as e:
-                if len(e.args[0]) > lang_len and len(languages) > 0:
+            else:
+                if len(part) > lang_len and len(languages) > 0:
                     # Probably this is a title which is lower-cased
                     # (Yes those actually do exist as well ... )
                     # So we will silently ignore it and break out
