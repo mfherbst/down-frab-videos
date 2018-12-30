@@ -230,7 +230,7 @@ class media_url_builder:
             try:
                 pycountry.languages.get(**{key3: "deu"})
                 return key3
-            except KeyError as e:
+            except KeyError:
                 continue
         raise SystemExit("Could not determine pycountry iso_639_3 key")
 
@@ -245,7 +245,7 @@ class media_url_builder:
             try:
                 pycountry.languages.get(**{key2: "de"})
                 return key2
-            except KeyError as e:
+            except KeyError:
                 continue
         raise SystemExit("Could not determine pycountry iso_639_1 key")
 
@@ -639,7 +639,7 @@ class lecture_downloader:
         try:
             # the fahrplan lecture object:
             lecture = self.fahrplan_data.lectures[talkid]
-        except KeyError as e:
+        except KeyError:
             raise UnknownTalkIdError(talkid)
 
         try:
@@ -695,7 +695,7 @@ class lecture_downloader:
 
                 # folder into which to download everything:
                 folder = os.path.join(self.download_directory, lecture['slug'])
-            except KeyError as e:
+            except KeyError:
                 raise UnknownTalkIdError(talkid)
         elif isinstance(talkid, str):
             lecture = [l for l in self.fahrplan_data.lectures.values()
@@ -733,7 +733,7 @@ class lecture_downloader:
                     print("Could not download media file \"" + url + "\".")
                     had_errors = True
 
-            except UnknownTalkIdError as e:
+            except UnknownTalkIdError:
                 print("Could not download format \"" + builder.video_format +
                       "\" for talkid \"" + str(talkid) + "\".")
                 had_errors = True
