@@ -92,6 +92,12 @@ class config:
                 "fahrplan": "https://fahrplan.events.ccc.de/congress/2018/Fahrplan/",
                 "media_prefix": "https://cdn.media.ccc.de/congress/2018",
             },
+            "camp2019": {
+                "starts": "2019-08-21",
+                "name": "camp2019",
+                "fahrplan": "https://events.ccc.de/camp/2019/Fahrplan",
+                "media_prefix": "https://cdn.media.ccc.de/events/camp2019",
+            },
         },
     }
 
