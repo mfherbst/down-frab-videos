@@ -1,4 +1,6 @@
 # down-frab-videos
+[![PyPI version](https://img.shields.io/pypi/v/down-frab-videos.svg)](https://pypi.org/project/down-frab-videos)
+
 Download videos and lecture attachments from events managed with the
 [frab](https://github.com/frab/frab) system
 or with the [pretalx](https://github.com/openeventstack/pretalx)
