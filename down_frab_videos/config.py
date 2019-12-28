@@ -98,6 +98,12 @@ class config:
                 "fahrplan": "https://events.ccc.de/camp/2019/Fahrplan",
                 "media_prefix": "https://cdn.media.ccc.de/events/camp2019",
             },
+            "36c3": {
+                "starts": "2019-12-27",
+                "name": "36c3",
+                "fahrplan": "https://fahrplan.events.ccc.de/congress/2019/Fahrplan/",
+                "media_prefix": "https://cdn.media.ccc.de/congress/2019",
+            },
         },
     }
 
