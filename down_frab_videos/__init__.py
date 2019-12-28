@@ -820,8 +820,17 @@ class idlist_reader:
             self.idlist = []
             with open(path) as f:
                 try:
-                    idlist = [line.split('#')[0].strip() for line in f.readlines()
-                              if not line.startswith("#")]
+                    if str(path).endswith(".fav.list"):
+                        idlist = []
+                        for line in f.readlines():
+                            if line.startswith("http"):
+                                res = re.search(r"https?:\/\/.*\/([^\.\/]*).html", line)
+                                if isinstance(type(res), NoneType):
+                                    raise ValueError("Couldn't parse the following URL line: {}".format(line))
+                                idlist.append(res.groups()[0])
+                    else:
+                        idlist = [line.split('#')[0].strip() for line in f.readlines()
+                                  if not line.startswith("#")]
                     for val in idlist:
                         if len(val) == 0:
                             continue
