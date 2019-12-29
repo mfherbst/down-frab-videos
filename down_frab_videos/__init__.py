@@ -821,13 +821,7 @@ class idlist_reader:
             with open(path) as f:
                 try:
                     if str(path).endswith(".fav.list"):
-                        idlist = []
-                        for line in f.readlines():
-                            if line.startswith("http"):
-                                res = re.search(r"https?:\/\/.*\/([^\.\/]*).html", line)
-                                if isinstance(type(res), NoneType):
-                                    raise ValueError("Couldn't parse the following URL line: {}".format(line))
-                                idlist.append(res.groups()[0])
+                        idlist = self._parse_fav_idlist(f)
                     else:
                         idlist = [line.split('#')[0].strip() for line in f.readlines()
                                   if not line.startswith("#")]
@@ -840,6 +834,22 @@ class idlist_reader:
                             self.idlist.append(val)
                 except ValueError as e:
                     raise ValueError("Invalid idlist file \""+path+"\": " + str(e))
+
+    @staticmethod
+    def _parse_fav_idlist(filedescriptor):
+        """
+        Parses the given favorite list, given as filedescriptor, returns the idlist.
+        """
+        idlist = []
+        for line in filedescriptor.readlines():
+            if line.startswith("http"):
+                res = re.search(r"https?:\/\/.*\/([^\.\/]*).html", line)
+                if isinstance(res, type(None)):
+                    raise ValueError("Couldn't parse the following URL line: {}".format(line))
+                idlist.append(res.groups()[0])
+
+        return idlist
+
 
 
 class timebarrier:
