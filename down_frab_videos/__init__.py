@@ -915,7 +915,8 @@ def add_args_to_parser(parser):
     parser.add_argument("-i", "--input-file",
                         metavar="listfile", type=str, default=None, dest="file",
                         help="A file which contains the talkids to download line "
-                        "by line.")
+                        "by line. If the file ends in '.fav.list' it is assumed to be "
+                        "a favourite list exported from the Fahrplan app.")
     parser.add_argument("--mindelay", metavar="seconds", type=int, default=3,
                         help="Minimum delay between two downloads (to not annoy the "
                         "media servers that much).")
