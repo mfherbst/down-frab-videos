@@ -140,9 +140,9 @@ class config:
         if file is not None:
             if isinstance(file, str):
                 with open(file) as f:
-                    parsed = yaml.load(f)
+                    parsed = yaml.safe_load(f)
             else:
-                parsed = yaml.load(file)
+                parsed = yaml.safe_load(file)
 
             try:
                 self.__settings = parsed["settings"]
