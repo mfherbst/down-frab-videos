@@ -1,9 +1,9 @@
 # vi: set et ts=4 sw=4 sts=4:
-import yaml
-import datetime
-import sys
 import os
 import re
+import sys
+import yaml
+import datetime
 
 
 class config:
@@ -103,6 +103,12 @@ class config:
                 "name": "36c3",
                 "fahrplan": "https://fahrplan.events.ccc.de/congress/2019/Fahrplan/",
                 "media_prefix": "https://cdn.media.ccc.de/congress/2019",
+            },
+            "37c3": {
+                "starts": "2023-12-27",
+                "name": "37c3",
+                "fahrplan": "https://fahrplan.events.ccc.de/congress/2023/fahrplan/",
+                "media_prefix": "https://cdn.media.ccc.de/congress/2023",
             },
         },
     }
