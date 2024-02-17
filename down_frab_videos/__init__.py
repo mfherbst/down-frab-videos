@@ -253,22 +253,24 @@ class media_url_builder:
                 continue
         raise SystemExit("Could not determine pycountry iso_639_1 key")
 
-    def __parse_languages(link, splitted):
+    def __parse_languages(link, splitted, baseindex):
         """ Take a splitted link and return the parsed
             language set.
         """
         languages = set()  # The parsed language list
+        
+        langindex = baseindex + 1
 
         # The parameters for parsing the language codes for
         # this talk.
         # Yes in some events the language code standard used
         # changes from talk to talk ...
-        if len(splitted[2]) == 2:
+        if len(splitted[langindex]) == 2:
             lang_standard = "iso639_1"
             lang_inkey = media_url_builder.__determine_iso_639_1_key()
             lang_outkey = media_url_builder.__determine_iso_639_3_key()
             lang_len = 2
-        elif len(splitted[2]) == 3:
+        elif len(splitted[langindex]) == 3:
             lang_standard = "iso639_3"
             lang_inkey = media_url_builder.__determine_iso_639_3_key()
             lang_outkey = lang_inkey
@@ -279,7 +281,7 @@ class media_url_builder:
                                         + "language string \"" + splitted[2] + "\""
                                         + " in link \"" + link + "\".")
 
-        for part in splitted[2:]:
+        for part in splitted[langindex:]:
             if part[0].isupper() or part[0].isdigit():
                 # We found an upper case or a number
                 # i.e. we found the title.
@@ -338,9 +340,14 @@ class media_url_builder:
             raise InvalidMediaPageError("failed to parse link",
                                         "Could not split link: \"" + link + "\"")
 
-        # event-id-lang1-lang2-...-Title_format.extension
+        # event(-location)-id-lang1-lang2-...-Title_format.extension
+        if splitted[1].isdigit():
+            baseindex = 1
+        else:
+            baseindex = 2
+                
         try:
-            talkid = int(splitted[1])
+            talkid = int(splitted[baseindex])
             talkdict = outdict.setdefault(talkid, dict())
             talkdict["talkid"] = talkid
         except ValueError:
@@ -356,7 +363,7 @@ class media_url_builder:
                                         + talkdict["event"] + "\"")
 
         # Update the languages
-        languages = media_url_builder.__parse_languages(link, splitted)
+        languages = media_url_builder.__parse_languages(link, splitted, baseindex)
         talkdict.setdefault("languages", set()).update(languages)
 
         # Join again to give the key in the langmap:
