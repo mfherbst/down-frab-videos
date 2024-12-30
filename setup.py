@@ -20,7 +20,7 @@ setup(
     #
     packages=['down_frab_videos'],
     scripts=["bin/down-frab-videos"],
-    version='0.5.7',
+    version='0.5.8',
     #
     python_requires='>=3',
     install_requires=[
