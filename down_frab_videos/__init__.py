@@ -27,7 +27,6 @@ import textwrap
 
 from .config import config
 
-
 __version__ = "0.5.7"
 __licence__ = "GPL v3"
 __authors__ = "Michael F. Herbst"
@@ -657,7 +656,10 @@ class lecture_downloader:
 
         try:
             ret = lecture['title'] + '\n'
-            ret += lecture['subtitle'] + '\n\n'
+            if lecture.get('subtitle', None):
+                ret += lecture['subtitle'] + '\n\n'
+            else:
+                ret += '\n'
 
             ret += "########################\n"
             ret += "#--     Abstract     --#\n"
@@ -669,6 +671,7 @@ class lecture_downloader:
             ret += "#--    Description   --#\n"
             ret += "########################\n\n"
             ret += textwrap.fill(lecture['description'], width=80)
+            ret += "\n\n" + lecture["url"] + "\n"
 
             if len(lecture['links']) == 0:
                 return ret
@@ -712,7 +715,7 @@ class lecture_downloader:
                 raise UnknownTalkIdError(talkid)
         elif isinstance(talkid, str):
             lecture = [l for l in self.fahrplan_data.lectures.values()
-                       if l["slug"] == talkid]
+                       if l["slug"] == talkid or ("/" + talkid) in l["url"]]
             if len(lecture) == 1:
                 lecture = lecture[0]
             else:
@@ -752,7 +755,7 @@ class lecture_downloader:
                 had_errors = True
 
         # download attachments
-        for att in lecture['attachments']:
+        for att in lecture.get('attachments', []):
             # build full url to file:
             url = self.fahrplan_data.base_page + "/" + att['url']
 
@@ -1005,8 +1008,9 @@ def main():
     # TMP: This is for the transition to the new config name
     config_old = "~/.config/down-frab-videos/config.yaml"
     if os.path.isfile(config_old):
-        import warnings
         import shutil
+        import warnings
+
         config_new = "~/.config/down-frab-videos/config.yaml"
 
         warnings.warn("Moving config {} to new location {}"

@@ -110,6 +110,13 @@ class config:
                 "fahrplan": "https://fahrplan.events.ccc.de/congress/2023/fahrplan/",
                 "media_prefix": "https://cdn.media.ccc.de/congress/2023",
             },
+            "38c3": {
+                "starts": "2024-12-27",
+                "name": "38c3",
+                "fahrplan": "https://fahrplan.events.ccc.de/congress/2024/fahrplan/",
+                "json_location": "https://fahrplan.events.ccc.de/congress/2024/fahrplan/schedule/export/schedule.json",
+                "media_prefix": "https://cdn.media.ccc.de/congress/2024",
+            },
         },
     }
 
