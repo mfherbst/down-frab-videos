@@ -716,6 +716,7 @@ class lecture_downloader:
         elif isinstance(talkid, str):
             lecture = [l for l in self.fahrplan_data.lectures.values()
                        if l["slug"] == talkid or ("/" + talkid) in l["url"]]
+
             if len(lecture) == 1:
                 lecture = lecture[0]
             else:
@@ -725,6 +726,8 @@ class lecture_downloader:
             subdir = self.fahrplan_data.meta["conference"].replace(" ", "_") + \
                 "-" + str(lecture["id"]) + "-" + title
             folder = os.path.join(self.download_directory, subdir)
+        else:
+            raise UnknownTalkIdError(talkid)
 
         # make dir
         os.makedirs(folder + "/", exist_ok=True)
