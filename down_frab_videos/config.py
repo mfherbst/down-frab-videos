@@ -125,7 +125,7 @@ class config:
                 "media_prefix": "https://cdn.media.ccc.de/congress/2025",
             },
             #
-            # Find IDs at
+            # Find pretalx IDs at
             #      https://cfp.cccv.de/39c3/schedule/
         },
     }
