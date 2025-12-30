@@ -117,6 +117,16 @@ class config:
                 "json_location": "https://fahrplan.events.ccc.de/congress/2024/fahrplan/schedule/export/schedule.json",
                 "media_prefix": "https://cdn.media.ccc.de/congress/2024",
             },
+            "39c3": {
+                "starts": "2025-12-27",
+                "name": "39c3",
+                "fahrplan": "https://fahrplan.events.ccc.de/congress/2025/fahrplan/",
+                "json_location": "https://api.events.ccc.de/congress/2025/schedule.json",
+                "media_prefix": "https://cdn.media.ccc.de/congress/2025",
+            },
+            #
+            # Find IDs at
+            #      https://cfp.cccv.de/39c3/schedule/
         },
     }
 

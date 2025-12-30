@@ -27,7 +27,7 @@ import textwrap
 
 from .config import config
 
-__version__ = "0.5.8"
+__version__ = "0.5.9"
 __licence__ = "GPL v3"
 __authors__ = "Michael F. Herbst"
 __email__ = "info@michael-herbst.com"
@@ -715,7 +715,9 @@ class lecture_downloader:
                 raise UnknownTalkIdError(talkid)
         elif isinstance(talkid, str):
             lecture = [l for l in self.fahrplan_data.lectures.values()
-                       if l["slug"] == talkid or ("/" + talkid) in l["url"]]
+                       if (l["slug"] == talkid
+                           or ("/" + talkid) in l["url"]
+                           or talkid == l["code"])]
 
             if len(lecture) == 1:
                 lecture = lecture[0]
