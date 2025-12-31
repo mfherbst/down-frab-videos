@@ -123,6 +123,7 @@ class config:
                 "fahrplan": "https://fahrplan.events.ccc.de/congress/2025/fahrplan/",
                 "json_location": "https://api.events.ccc.de/congress/2025/schedule.json",
                 "media_prefix": "https://cdn.media.ccc.de/congress/2025",
+                "attachment_prefix": "https://cfp.cccv.de",
             },
             #
             # Find pretalx IDs at

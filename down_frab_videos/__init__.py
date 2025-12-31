@@ -458,7 +458,7 @@ class fahrplan_data:
             # Request body as a unicode string
             return req.text
 
-    def __init__(self, base_page, json_location):
+    def __init__(self, base_page, json_location, attachment_prefix):
         """
         Initialise a fahrplan_data object.
 
@@ -467,6 +467,7 @@ class fahrplan_data:
         """
         self.base_page = base_page
         self.__location = json_location
+        self.attachment_prefix = attachment_prefix
         fahrplan_raw = json.loads(self.__get_fahrplan_as_text(self.location))
 
         try:
@@ -762,7 +763,7 @@ class lecture_downloader:
         # download attachments
         for att in lecture.get('attachments', []):
             # build full url to file:
-            url = self.fahrplan_data.base_page + "/" + att['url']
+            url = self.fahrplan_data.attachment_prefix + "/" + att['url']
 
             if url.find("attachments/original/missing.png") != -1:
                 # marker file that the original attachment file has gone missing
@@ -773,8 +774,8 @@ class lecture_downloader:
             outfile = outfile[:outfile.rfind("?")]    # ignore the tailling ?..... stuff
             ret = down_manag.download(url, folder=folder, out=outfile)
             if ret != 0:
-                print("Could not download attachment \"" + att + "\" to file \"" + outfile
-                      + "\" in folder \"" + folder + "\".")
+                print("Could not download attachment \"" + att['url'] + "\" to file \""
+                      + outfile + "\" in folder \"" + folder + "\".")
                 had_errors = True
 
         # TODO go through links and download them if there are of a certain mime type
@@ -1102,9 +1103,9 @@ def main():
         fahrplan_url = selected_event["fahrplan"]
         json_location = selected_event.get("json_location",
                                            fahrplan_url + "/schedule.json")
-
+        attachment_prefix = selected_event.get("attachment_prefix", fahrplan_url) 
         print(" - Fahrplan from \"" + domain_from_url(fahrplan_url) + "\".")
-        fahrplan = fahrplan_data(fahrplan_url, json_location)
+        fahrplan = fahrplan_data(fahrplan_url, json_location, attachment_prefix)
     except IOError as e:
         raise SystemExit("Could not download Fahrplan: " + str(e))
     print(" - Finished: Got \"" + fahrplan.meta['conference'] + "\", "
